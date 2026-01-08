@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yalla Scooter - Premium V13</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --blue: #0088ff; --dark: #000; --card: #111; --success: #2ed573; --danger: #ff4757; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--dark); color: white; margin: 0; padding: 10px; }
+        .box { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--blue); max-width: 500px; margin: auto; }
+        h1 { color: var(--blue); text-align: center; margin-bottom: 10px; font-size: 26px; }
+        #net-status { text-align: center; font-size: 10px; margin-bottom: 10px; font-weight: bold; }
+        .input-group { background: #080808; padding: 15px; border-radius: 15px; border: 1px solid #222; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 13px; color: var(--blue); }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; border-radius: 10px; color: white; margin-bottom: 10px; font-size: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { cursor: pointer; border: none; border-radius: 12px; font-weight: bold; transition: 0.3s; padding: 15px; width: 100%; }
+        .btn-main { background: var(--blue); color: white; font-size: 18px; }
+        .btn-now { background: #222; color: var(--blue); font-size: 11px; padding: 5px; margin-bottom: 10px; }
+        .btn-break { background: #1a0000; border: 1px solid var(--danger); color: var(--danger); margin-top: 10px; }
+        .btn-reset { background: transparent; border: 1px solid #444; color: #888; margin-top: 15px; font-size: 12px; }
+        .revenue-card { background: var(--blue); color: black; padding: 15px; border-radius: 15px; text-align: center; margin: 20px 0; }
+        .search-box { background: #001a33; padding: 15px; border-radius: 15px; border: 1px solid var(--blue); margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 15px; }
+        th { color: #888; padding: 10px; border-bottom: 1px solid #333; }
+        td { padding: 10px; text-align: center; border-bottom: 1px solid #111; }
+        #login-screen { height: 90vh; display: flex; align-items: center; justify-content: center; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="box" style="text-align: center; width: 100%;">
+            <h1>Yalla Scooter</h1>
+            <input type="password" id="pass" placeholder="باسورد الدخول (1234)" style="text-align: center;">
+            <button class="btn-main" onclick="login()">دخول</button>
+        </div>
+    </div>
+
+    <div id="app" class="box hidden">
+        <h1>إدارة Yalla Scooter</h1>
+        <div id="net-status">جاري فحص الاتصال...</div>
+
+        <div class="input-group">
+            <label>الموظف المسؤول</label>
+            <input type="text" id="staff" placeholder="اسم الموظف">
+            <label>رقم الإسكوتر</label>
+            <input type="text" id="scooter" placeholder="S-01">
+            <div class="grid">
+                <div><label>خروج</label><input type="time" id="startTime"><button class="btn-now" onclick="setT('startTime')">الآن</button></div>
+                <div><label>رجوع</label><input type="time" id="endTime"><button class="btn-now" onclick="setT('endTime')">الآن</button></div>
+            </div>
+        </div>
+
+        <button class="btn-main" onclick="saveTrip(false)">إنهاء الرحلة والحساب ✅</button>
+        <button class="btn-break" onclick="saveTrip(true)">🚨 تسجيل عطل فني وخصم</button>
+
+        <div class="revenue-card">
+            <small>دخل الشفت الحالي (اليوم)</small>
+            <h2 id="totalDisplay">0.00 ج.م</h2>
+        </div>
+
+        <button class="btn-reset" onclick="closeShift()">🏁 تقفيل الوردية (تصفير العداد)</button>
+
+        <div class="search-box" style="margin-top:20px;">
+            <label>📅 مراجعة تاريخ سابق من الأرشيف:</label>
+            <input type="date" id="viewDate" onchange="loadHistory()">
+            <table id="logTable">
+                <thead><tr><th>سكوتر</th><th>وقت</th><th>مدة</th><th>الصافي</th></tr></thead>
+                <tbody id="logBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCJOSLUFRAZV4YWYFDB9VLvju",
+        authDomain: "yala-scooter.firebaseapp.com",
+        databaseURL: "https://yalla-scooter-default-rtdb.firebaseio.com",
+        projectId: "yalla-scooter",
+        storageBucket: "yala-scooter.firebasestorage.app",
+        messagingSenderId: "1014076976512",
+        appId: "1:1014076976512:web:c053191787884674720970"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    db.ref(".info/connected").on("value", s => {
+        const bar = document.getElementById('net-status');
+        bar.innerText = s.val() ? "● متصل بالسحاب" : "○ غير متصل";
+        bar.style.color = s.val() ? "#2ed573" : "#ff4757";
+    });
+
+    function login() {
+        if(document.getElementById('pass').value === "1234") {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('viewDate').value = today;
+            document.getElementById('staff').value = localStorage.getItem('yStaff') || '';
+            loadHistory();
+        } else { alert("خطأ!"); }
+    }
+
+    function setT(id) {
+        const n = new Date();
+        document.getElementById(id).value = n.getHours().toString().padStart(2,'0') + ":" + n.getMinutes().toString().padStart(2,'0');
+    }
+
+    async function saveTrip(isBreak) {
+        const staff = document.getElementById('staff').value;
+        const scooter = document.getElementById('scooter').value;
+        const start = document.getElementById('startTime').value;
+        let end = document.getElementById('endTime').value;
+        let reason = "سليم ✅"; let discount = 0;
+
+        if(!staff || !scooter || !start) return alert("أكمل البيانات");
+
+        if(isBreak) {
+            reason = prompt("ما هو سبب العطل؟"); if(reason === null) return;
+            discount = parseFloat(prompt("اخصم كام؟")) || 0;
+            const n = new Date();
+            end = n.getHours().toString().padStart(2,'0') + ":" + n.getMinutes().toString().padStart(2,'0');
+        }
+
+        if(!end) return alert("أدخل وقت الرجوع");
+
+        const t1 = new Date("2026-01-01 " + start), t2 = new Date("2026-01-01 " + end);
+        if(t2 < t1) t2.setDate(t2.getDate() + 1);
+        const mins = Math.max(1, Math.floor((t2 - t1) / 60000));
+        const finalCost = Math.max(0, (mins * 2) - discount);
+
+        const day = new Date().toISOString().split('T')[0];
+        try {
+            await db.ref('history/' + day).push({
+                staff, scooter, start, end, mins, cost: finalCost, timestamp: Date.now(), reason
+            });
+            alert("تم الحفظ بنجاح! الصافي: " + finalCost + " ج");
+            document.getElementById('scooter').value = ""; document.getElementById('startTime').value = ""; document.getElementById('endTime').value = "";
+            localStorage.setItem('yStaff', staff);
+        } catch (e) { alert("خطأ: " + e.message); }
+    }
+
+    function loadHistory() {
+        const date = document.getElementById('viewDate').value;
+        const lastReset = localStorage.getItem('lastReset_' + date) || 0;
+
+        db.ref('history/' + date).on('value', (snap) => {
+            const data = snap.val();
+            const tbody = document.getElementById("logBody");
+            tbody.innerHTML = ""; 
+            let viewTotal = 0;
+
+            if(data) {
+                Object.values(data).reverse().forEach(t => {
+                    // عرض الكل في الجدول (الأرشيف)
+                    tbody.innerHTML += `<tr><td><b>${t.scooter}</b></td><td>${t.start}-${t.end}</td><td>${t.mins}د</td><td>${t.cost}ج</td></tr>`;
+                    
+                    // حساب الإجمالي للوردية الحالية فقط (التي بدأت بعد آخر تصفير)
+                    if (t.timestamp > lastReset) {
+                        viewTotal += parseFloat(t.cost);
+                    }
+                });
+            }
+            document.getElementById('totalDisplay').innerText = viewTotal.toFixed(2) + " ج.م";
+        });
+    }
+
+    function closeShift() {
+        const date = document.getElementById('viewDate').value;
+        if(confirm("هل تريد تقفيل الوردية الحالية وتصفير العداد؟ (ستظل البيانات محفوظة في التقويم)")) {
+            localStorage.setItem('lastReset_' + date, Date.now());
+            loadHistory();
+            alert("تم تصفير العداد بنجاح. يمكنك رؤية الرحلات السابقة في الجدول بالأسفل.");
+        }
+    }
+</script>
+</body>
+</html>
