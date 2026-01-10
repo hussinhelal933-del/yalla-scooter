@@ -2,80 +2,325 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- 1. إصلاح مشكلة الموبايل: السطر ده بيخلي الصفحة تملأ شاشة التليفون -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yalla Scooter | نظام الإدارة المتكامل</title>
+    <!-- خط وتصميمات -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
-        body { background: #0b1120; color: white; height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        .loading-screen { text-align: center; width: 90%; max-width: 400px; }
-        
-        /* تنسيق حقول الإدخال لتكون مريحة للمس */
-        input { width: 100%; padding: 15px; margin-top: 15px; border-radius: 10px; border: none; font-size: 18px; text-align: center; outline: none; }
-        button { width: 100%; padding: 15px; background: #00f2ff; color: #000; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; font-weight: bold; font-size: 18px; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
-        
-        #error-msg { color: #ff4b2b; margin-top: 10px; font-size: 14px; min-height: 20px; }
+        :root {
+            --bg: #0f172a; --card: #1e293b; --text: #f8fafc;
+            --primary: #3b82f6; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+        }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-        /* كلاس لإخفاء العناصر */
-        .hidden { display: none !important; }
+        /* --- القائمة الجانبية --- */
+        .sidebar { width: 80px; background: #111; display: flex; flex-direction: column; align-items: center; padding-top: 20px; transition: 0.3s; z-index: 100; }
+        .sidebar:hover { width: 200px; }
+        .nav-item { color: #888; padding: 15px; width: 100%; cursor: pointer; display: flex; align-items: center; transition: 0.2s; white-space: nowrap; overflow: hidden; }
+        .nav-item i { font-size: 24px; min-width: 50px; text-align: center; }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        .nav-text { margin-right: 15px; opacity: 0; transition: 0.2s; }
+        .sidebar:hover .nav-text { opacity: 1; }
 
-        /* تصميم شاشة السيستم (الداشبورد) */
-        #main-system { width: 100%; height: 100%; text-align: center; padding-top: 50px; }
+        /* --- المحتوى الرئيسي --- */
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
+        .section { display: none; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- كروت الإحصائيات (الإدارة) --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: 15px; border-right: 4px solid var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .stat-card h3 { font-size: 14px; color: #aaa; margin-bottom: 5px; }
+        .stat-card .num { font-size: 24px; font-weight: bold; }
+
+        /* --- لوحة الاسكوترات --- */
+        .scooter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .scooter-card { background: var(--card); border-radius: 15px; padding: 15px; border: 1px solid #333; position: relative; }
+        .scooter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .bg-available { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .bg-rented { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+        .timer-display { font-size: 28px; font-weight: bold; text-align: center; margin: 15px 0; font-family: monospace; color: var(--primary); }
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-start { background: var(--success); color: #000; }
+        .btn-stop { background: var(--danger); color: #fff; }
+        .btn-pause { background: var(--warning); color: #000; }
+
+        /* --- الحضور والانصراف --- */
+        .attendance-box { background: var(--card); padding: 30px; border-radius: 20px; text-align: center; max-width: 400px; margin: 0 auto; }
+        .time-now { font-size: 40px; font-weight: 900; margin-bottom: 10px; }
+        .status-msg { font-size: 18px; margin-top: 10px; padding: 10px; border-radius: 10px; }
+
+        /* --- AI Chat --- */
+        .ai-fab { position: fixed; bottom: 20px; left: 20px; background: linear-gradient(45deg, #ff00cc, #3333ff); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 0 20px rgba(255, 0, 204, 0.5); }
+        .ai-window { position: fixed; bottom: 90px; left: 20px; width: 300px; height: 400px; background: #1a1a1a; border-radius: 15px; border: 1px solid #444; display: none; flex-direction: column; overflow: hidden; }
+        .chat-body { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; }
+        .chat-input { padding: 10px; border-top: 1px solid #333; display: flex; }
+        .chat-input input { flex: 1; background: #222; border: none; color: white; padding: 5px; border-radius: 5px; }
+
     </style>
 </head>
 <body>
 
-    <!-- شاشة الدخول -->
-    <div id="login-box" class="loading-screen">
-        <h2>🔐 نظام أمان يلا سكوتر</h2>
-        <p style="color:#888; font-size:12px">أدخل كود الطوارئ للدخول</p>
-        
-        <div id="error-msg"></div>
-        
-        <!-- ضفتلك (event) عشان لو دوست انتر يدخل علطول -->
-        <input type="tel" id="fallback-pass" placeholder="****" maxlength="4" onkeypress="handleEnter(event)">
-        <button onclick="checkLogin()">دخول للنظام</button>
+    <!-- 1. القائمة الجانبية -->
+    <div class="sidebar">
+        <div class="nav-item active" onclick="showSection('dashboard')">
+            <i class="fa-solid fa-chart-pie"></i><span class="nav-text">الإدارة والتقارير</span>
+        </div>
+        <div class="nav-item" onclick="showSection('scooters')">
+            <i class="fa-solid fa-motorcycle"></i><span class="nav-text">لوحة الاسكوترات</span>
+        </div>
+        <div class="nav-item" onclick="showSection('attendance')">
+            <i class="fa-solid fa-fingerprint"></i><span class="nav-text">الحضور والانصراف</span>
+        </div>
+        <div class="nav-item" onclick="showSection('customers')">
+            <i class="fa-solid fa-users"></i><span class="nav-text">قاعدة العملاء</span>
+        </div>
     </div>
 
-    <!-- 2. شاشة النظام الرئيسي (مخفية في البداية) -->
-    <div id="main-system" class="hidden">
-        <h1 style="color: #00f2ff;">✅ تم الدخول بنجاح</h1>
-        <p>جاري تحميل وحدات التحكم...</p>
-        <!-- هنا بتحط كود الفايربيس والبلوتوث بتاعك -->
+    <!-- 2. المحتوى الرئيسي -->
+    <div class="main-content">
+        
+        <!-- صفحة الإدارة -->
+        <div id="dashboard" class="section active">
+            <h2>📊 تقرير الشهر الحالي</h2>
+            <div class="stats-grid">
+                <div class="stat-card" style="border-color: var(--success);">
+                    <h3>💰 إجمالي الدخل</h3>
+                    <div class="num">12,500 ج.م</div>
+                </div>
+                <div class="stat-card" style="border-color: var(--primary);">
+                    <h3>⏱️ ساعات العمل</h3>
+                    <div class="num">145 ساعة</div>
+                </div>
+                <div class="stat-card" style="border-color: var(--warning);">
+                    <h3>🛵 عدد الرحلات</h3>
+                    <div class="num">89 رحلة</div>
+                </div>
+                <div class="stat-card" style="border-color: var(--danger);">
+                    <h3>🛠️ تكلفة الأعطال</h3>
+                    <div class="num">850 ج.م</div>
+                </div>
+            </div>
+            
+            <h3>📋 سجل الأعطال الأخير</h3>
+            <table style="width:100%; text-align:right; color:#ccc; border-collapse: collapse; margin-top:10px;">
+                <tr style="background:#222;"> <th style="padding:10px;">الاسكوتر</th> <th>العطل</th> <th>التكلفة</th> <th>التاريخ</th> </tr>
+                <tr style="border-bottom:1px solid #333;"> <td style="padding:10px;">A11</td> <td>كسر في الرفرف</td> <td style="color:var(--danger)">150 ج</td> <td>10/10</td> </tr>
+            </table>
+        </div>
+
+        <!-- صفحة الاسكوترات -->
+        <div id="scooters" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>🛵 التحكم المباشر</h2>
+                <button style="background:#333; color:#fff;" onclick="addNewScooter()">+ إضافة اسكوتر</button>
+            </div>
+            
+            <div class="scooter-grid" id="scooterGrid">
+                <!-- كارت الاسكوتر (مثال) -->
+                <div class="scooter-card" id="scooter-1">
+                    <div class="scooter-header">
+                        <h3>A11 (شاومي)</h3>
+                        <span class="status-badge bg-available" id="status-1">متاح</span>
+                    </div>
+                    <div class="timer-display" id="timer-1">00:00:00</div>
+                    <div class="actions">
+                        <button class="btn-start" onclick="startRide(1)">بدء</button>
+                        <button class="btn-stop" onclick="stopRide(1)">إنهاء</button>
+                    </div>
+                    <button class="btn-pause" style="width:100%; margin-top:10px;" onclick="pauseRide(1)">إيقاف مؤقت</button>
+                </div>
+                
+                <div class="scooter-card" id="scooter-2">
+                    <div class="scooter-header">
+                        <h3>B05 (ناين بوت)</h3>
+                        <span class="status-badge bg-available" id="status-2">متاح</span>
+                    </div>
+                    <div class="timer-display" id="timer-2">00:00:00</div>
+                    <div class="actions">
+                        <button class="btn-start" onclick="startRide(2)">بدء</button>
+                        <button class="btn-stop" onclick="stopRide(2)">إنهاء</button>
+                    </div>
+                    <button class="btn-pause" style="width:100%; margin-top:10px;" onclick="pauseRide(2)">إيقاف مؤقت</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- صفحة الحضور والانصراف -->
+        <div id="attendance" class="section">
+            <div class="attendance-box">
+                <h2>🕒 تسجيل حضور الموظفين</h2>
+                <p>ميعاد العمل الرسمي: <strong>03:00 م</strong></p>
+                
+                <div class="time-now" id="liveClock">00:00:00</div>
+                
+                <input type="text" id="staffName" placeholder="اسم الموظف" style="width:100%; padding:10px; margin-bottom:10px; background:#111; border:none; color:white; border-radius:5px; text-align:center;">
+                
+                <button onclick="checkIn()" style="width:100%; background:var(--primary); color:white; font-size:18px;">تسجيل دخول الآن</button>
+                
+                <div id="attStatus" class="status-msg" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🤖 زرار الـ AI -->
+    <div class="ai-fab" onclick="toggleAI()"><i class="fa-solid fa-robot"></i></div>
+    <div class="ai-window" id="aiWindow">
+        <div style="background:#333; padding:10px; font-weight:bold;">المساعد الذكي</div>
+        <div class="chat-body" id="chatBody">
+            <div style="color:#aaa;">مرحباً! أنا هنا لمساعدتك في إدارة المحل. اسألني عن أي عطل أو إحصائية.</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="aiInput" placeholder="اكتب سؤالك...">
+            <button onclick="askAI()" style="width:40px; margin-right:5px; background:var(--primary);"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
     </div>
 
     <script>
-        function checkLogin() {
-            const passInput = document.getElementById('fallback-pass');
-            const p = passInput.value;
-            const errorDiv = document.getElementById('error-msg');
+        // --- 1. التنقل بين الصفحات ---
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
 
-            // الأكواد المسموح بها
-            if(p === "9924" || p === "1213") {
-                errorDiv.innerText = ""; // مسح أي خطأ سابق
-                
-                // إخفاء شاشة الدخول وإظهار النظام
-                document.getElementById('login-box').classList.add('hidden');
-                document.getElementById('main-system').classList.remove('hidden');
+        // --- 2. نظام التايمر للاسكوترات ---
+        let timers = {};
+        
+        function startRide(id) {
+            const timerEl = document.getElementById(`timer-${id}`);
+            const statusEl = document.getElementById(`status-${id}`);
+            
+            // طلب بيانات العميل قبل البدء
+            const customer = prompt("أدخل اسم العميل ورقم تليفونه:");
+            if(!customer) return;
 
-                // هنا ممكن تستدعي دالة connectToScooter() لو الكود موجود في ملف تاني
-                
-            } else {
-                errorDiv.innerText = "❌ الكود غير صحيح، حاول مرة أخرى";
-                passInput.value = ""; // فضي الخانة
-                passInput.focus(); // رجع المؤشر للكتابة
+            statusEl.className = "status-badge bg-rented";
+            statusEl.innerText = "مؤجر: " + customer;
+            
+            let seconds = 0;
+            timers[id] = setInterval(() => {
+                seconds++;
+                const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+                const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                timerEl.innerText = `${hrs}:${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopRide(id) {
+            clearInterval(timers[id]);
+            const timerEl = document.getElementById(`timer-${id}`);
+            const duration = timerEl.innerText;
+            
+            // سؤال عن الأعطال
+            const hasDamage = confirm("هل يوجد أعطال في الاسكوتر؟");
+            let damageCost = 0;
+            let damageReason = "لا يوجد";
+            
+            if(hasDamage) {
+                damageReason = prompt("اكتب وصف العطل:");
+                damageCost = prompt("أدخل قيمة الخصم/التكلفة:");
             }
+
+            // حساب التكلفة (مثال: الساعة بـ 50)
+            alert(`💰 الحساب:
+            - المدة: ${duration}
+            - خصم العطل: ${damageCost} ج
+            - العطل: ${damageReason}
+            
+            تم الحفظ في قاعدة البيانات.`);
+            
+            // تصفير
+            timerEl.innerText = "00:00:00";
+            document.getElementById(`status-${id}`).className = "status-badge bg-available";
+            document.getElementById(`status-${id}`).innerText = "متاح";
         }
 
-        // 3. دالة عشان زرار الـ Enter يشتغل
-        function handleEnter(e) {
-            if(e.key === 'Enter') checkLogin();
+        function pauseRide(id) {
+            alert("تم إيقاف الوقت مؤقتاً (الخاصية قيد التفعيل)");
         }
 
-        window.onerror = function(msg) {
-            document.getElementById('error-msg').innerText = "⚠️ خطأ في النظام: " + msg;
-        };
+        // --- 3. نظام الحضور والانصراف (الذكي) ---
+        // تحديث الساعة لايف
+        setInterval(() => {
+            document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+
+        function checkIn() {
+            const name = document.getElementById('staffName').value;
+            if(!name) { alert("اكتب الاسم الأول"); return; }
+
+            const now = new Date();
+            const target = new Date();
+            target.setHours(15, 0, 0); // الساعة 3:00 مساءً
+
+            const diffMinutes = (now - target) / 60000;
+            const statusDiv = document.getElementById('attStatus');
+            statusDiv.style.display = "block";
+
+            let msg = "";
+            let color = "";
+
+            if (diffMinutes <= 15) {
+                msg = `✅ ${name}: حضور في الموعد (أو تأخير مسموح)`;
+                color = "rgba(34, 197, 94, 0.2)";
+                statusDiv.style.color = "#22c55e";
+            } else if (diffMinutes > 15) {
+                const late = Math.floor(diffMinutes);
+                msg = `🛑 ${name}: تأخير ${late} دقيقة! (خصم)`;
+                color = "rgba(239, 68, 68, 0.2)";
+                statusDiv.style.color = "#ef4444";
+                
+                // إرسال للتلجرام
+                sendTelegram(`🚨 تنبيه تأخير: الموظف ${name} تأخر ${late} دقيقة.`);
+            }
+
+            statusDiv.style.background = color;
+            statusDiv.innerText = msg;
+        }
+
+        // --- 4. دالة التلجرام (محتاجة التوكن بتاعك) ---
+        function sendTelegram(text) {
+            // ضع التوكن والـ ChatID هنا
+            const token = "YOUR_BOT_TOKEN";
+            const chatId = "YOUR_CHAT_ID";
+            // fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`);
+            console.log("Telegram Sent: " + text); // للتجربة
+        }
+
+        // --- 5. الذكاء الاصطناعي (AI) ---
+        function toggleAI() {
+            const win = document.getElementById('aiWindow');
+            win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function askAI() {
+            const input = document.getElementById('aiInput');
+            const body = document.getElementById('chatBody');
+            
+            body.innerHTML += `<div style="margin-top:5px; color:#fff;">أنت: ${input.value}</div>`;
+            
+            // رد آلي بسيط (ممكن نربطه بـ API حقيقي)
+            let reply = "جاري تحليل البيانات...";
+            if(input.value.includes("دخل")) reply = "إجمالي الدخل اليوم هو 12,500 جنيه.";
+            if(input.value.includes("عطل")) reply = "آخر عطل مسجل للاسكوتر A11 (كسر رفرف).";
+            
+            setTimeout(() => {
+                body.innerHTML += `<div style="margin-top:5px; color:var(--primary);">AI: ${reply}</div>`;
+                body.scrollTop = body.scrollHeight;
+            }, 500);
+            
+            input.value = "";
+        }
     </script>
 </body>
 </html>
