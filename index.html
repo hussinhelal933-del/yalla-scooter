@@ -2,295 +2,135 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter Pro | V28</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yalla Scooter Pro Control</title>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        :root { 
-            --neon-blue: #00f2ff; 
-            --neon-red: #ff0055; 
-            --neon-green: #0aff60;
-            --bg-dark: #050505;
-            --card-bg: #111;
-            --input-bg: #1a1a1a;
-        }
-
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: all 0.3s ease; }
-        body { background: var(--bg-dark); color: #fff; padding: 15px; line-height: 1.6; }
-        
-        /* Utility Classes */
+        :root { --p: #00d2ff; --err: #ff4b2b; --ok: #00f2fe; --bg: #0b1120; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
         .hidden { display: none !important; }
-        .flex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-        /* Login Overlay */
-        #login-overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
-            z-index: 10000; display: flex; align-items: center; justify-content: center; 
-            backdrop-filter: blur(10px);
-        }
-        .login-box { 
-            width: 85%; max-width: 380px; padding: 40px 25px; 
-            border: 1px solid var(--neon-blue); border-radius: 30px; 
-            text-align: center; background: #000; box-shadow: 0 0 20px rgba(0,242,255,0.2);
-        }
-
-        /* Main Container */
-        .app-container { max-width: 500px; margin: auto; }
-        header { text-align: center; margin-bottom: 25px; }
-        h1 { color: var(--neon-blue); font-size: 28px; font-weight: 900; letter-spacing: 1px; }
-        
-        /* Cards & Sections */
-        .section { 
-            background: var(--card-bg); padding: 20px; border-radius: 20px; 
-            border: 1px solid #222; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--neon-blue); font-weight: 600; }
-        
-        /* Inputs */
-        input { 
-            width: 100%; padding: 14px; background: var(--input-bg); border: 1px solid #333; 
-            border-radius: 12px; color: #fff; font-size: 16px; margin-bottom: 15px; text-align: center;
-        }
-        input:focus { border-color: var(--neon-blue); outline: none; box-shadow: 0 0 10px rgba(0,242,255,0.1); }
-
-        /* Buttons */
-        button { 
-            cursor: pointer; border: none; border-radius: 12px; font-weight: bold; 
-            padding: 15px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-primary { background: var(--neon-blue); color: #000; width: 100%; }
-        .btn-primary:active { transform: scale(0.98); }
-        .btn-outline-red { background: transparent; border: 1px solid var(--neon-red); color: var(--neon-red); width: 100%; }
-        
-        .btn-remote { flex: 1; padding: 12px; font-size: 13px; }
-        .unlock { background: rgba(10, 255, 96, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); }
-        .lock { background: rgba(255, 0, 85, 0.1); color: var(--neon-red); border: 1px solid var(--neon-red); }
-
-        /* Dashboard Stats */
-        .revenue-card { 
-            background: linear-gradient(135deg, var(--neon-blue), #00a2ff); 
-            color: #000; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 25px;
-        }
-        .revenue-card h2 { font-size: 32px; font-weight: 900; }
-
-        /* Data Table */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th { color: #666; padding: 10px; font-weight: 400; border-bottom: 1px solid #222; }
-        td { padding: 15px 10px; border-bottom: 1px solid #1a1a1a; text-align: center; }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-left: 5px; }
+        .admin-panel { background: #0f172a; border: 1px solid var(--p); border-radius: 20px; padding: 20px; margin: 15px; }
+        .user-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #222; align-items: center; }
+        .status-on { width: 10px; height: 10px; background: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #00ff00; }
+        .btn-kick { background: var(--err); color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .btn-block { background: #000; color: var(--err); border: 1px solid var(--err); padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        table { width: 100%; text-align: right; margin-top: 10px; border-collapse: collapse; }
+        th { color: var(--p); border-bottom: 2px solid #333; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #222; }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="login-box">
-            <h1 style="margin-bottom: 20px;">Yalla Scooter</h1>
-            <input type="password" id="entry-pass" placeholder="كود الإدارة الرقمي">
-            <button class="btn-primary" onclick="App.login()">تسجيل الدخول</button>
-        </div>
-    </div>
-
-    <div id="main-app" class="app-container hidden">
-        <header>
-            <h1>COMMAND CENTER</h1>
-            <div id="clock" style="color: var(--neon-blue); font-weight: bold; opacity: 0.8;"></div>
-        </header>
-
-        <div class="section">
-            <label>بيانات السكوتر والرحلة</label>
-            <input type="text" id="scooter" placeholder="رقم السكوتر (مثال: A10)">
-            <input type="text" id="staff" placeholder="اسم الموظف المسؤول">
-            
-            <div class="flex-grid" style="margin-bottom: 20px;">
-                <button class="btn-remote unlock" onclick="App.sendRemote('UNLOCK')">🔓 فتح القفل</button>
-                <button class="btn-remote lock" onclick="App.sendRemote('LOCK')">🔒 إغلاق القفل</button>
+    <div id="admin-advanced" class="admin-panel admin-only hidden">
+        <h3 style="color:var(--ok)"><i class="fas fa-users-cog"></i> الرقابة والتحكم في السيرفر</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px;">
+                <h4><span class="status-on"></span> المتصلون الآن</h4>
+                <div id="online-users-list"></div>
             </div>
 
-            <div class="flex-grid">
-                <div>
-                    <label>وقت الخروج</label>
-                    <input type="time" id="start-t">
-                    <button class="btn-primary" style="padding: 5px; font-size: 11px;" onclick="App.setNow('start-t')">الآن</button>
-                </div>
-                <div>
-                    <label>وقت العودة</label>
-                    <input type="time" id="end-t">
-                    <button class="btn-primary" style="padding: 5px; font-size: 11px;" onclick="App.setNow('end-t')">الآن</button>
-                </div>
-            </div>
-        </div>
-
-        <button class="btn-primary" style="margin-bottom: 10px;" onclick="App.save(false)">✅ إنهاء وحساب الرحلة</button>
-        <button class="btn-outline-red" onclick="App.save(true)">🚨 تسجيل عطل فني / خصم</button>
-
-        <div class="revenue-card">
-            <small>إجمالي دخل اليوم</small>
-            <h2 id="shift-total">0.00</h2>
-            <small>جنية مصري</small>
-        </div>
-
-        <div class="section">
-            <label>سجل الرحلات</label>
-            <input type="date" id="history-date" onchange="App.load()">
-            <div class="table-container">
-                <table id="data-table">
-                    <thead>
-                        <tr>
-                            <th>السكوتر</th>
-                            <th>المدة</th>
-                            <th>المبلغ</th>
-                            <th>الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px;">
+                <h4><i class="fas fa-user-slash"></i> قائمة الحظر (Block)</h4>
+                <div id="blocked-users-list"></div>
             </div>
         </div>
     </div>
 
-<script>
-    // Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyCJOSLUFRAZV4YWYFDB9VLvju",
-        authDomain: "yala-scooter.firebaseapp.com",
-        databaseURL: "https://yalla-scooter-default-rtdb.firebaseio.com",
-        projectId: "yala-scooter",
-        storageBucket: "yala-scooter.firebasestorage.app",
-        messagingSenderId: "1014076976512",
-        appId: "1:1014076976512:web:c053191787884674720970"
-    };
+    <script>
+        // إعدادات تليجرام (ضع بياناتك هنا)
+        const TG_TOKEN = "7899750780:AAFL31roDUbqFDoP-iUL2dhNn4GtKFAPUD0";
+        const TG_CHAT_ID = "5684905593"; 
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+        function sendToTelegram(msg) {
+            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent(msg)}`);
+        }
 
-    const App = {
-        login: function() {
-            const pass = document.getElementById('entry-pass').value;
-            if(pass === "9924") {
-                localStorage.setItem('yalla_session', btoa('authorized'));
-                this.showApp();
-            } else {
-                alert("كود الدخول غير صحيح");
+        // إعدادات Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2J3KViN4aZYRJ43rYGFtwkmy-jZXBO6c",
+            databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
+            projectId: "yalla-scooter-pro",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 1. تتبع المتصلين وطردهم
+        function trackPresence(userType) {
+            const myPresenceRef = db.ref(`online_sessions/${userType}`);
+            myPresenceRef.set({
+                status: "online",
+                last_seen: Date.now(),
+                ip: "User-Session"
+            });
+
+            // لو الأدمن مسح الجلسة، الموظف يخرج فوراً
+            myPresenceRef.on('value', snap => {
+                if(!snap.exists()) {
+                    alert("لقد تم إخراجك من قبل الإدارة!");
+                    location.reload();
+                }
+            });
+
+            myPresenceRef.onDisconnect().remove();
+        }
+
+        // 2. نظام البلوك للعملاء
+        function blockCustomer(phone, name) {
+            if(confirm(`هل تريد حظر العميل ${name} نهائياً؟`)) {
+                db.ref(`blacklist/${phone}`).set({ name, date: Date.now() });
+                sendToTelegram(`🚫 تم حظر عميل جديد:\nالاسم: ${name}\nالموبايل: ${phone}`);
             }
-        },
+        }
 
-        showApp: function() {
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
-            this.init();
-        },
+        // 3. التحقق من الحظر عند بدء الرحلة
+        async function startTrip() {
+            const ph = document.getElementById('cust-phone').value;
+            const snap = await db.ref(`blacklist/${ph}`).once('value');
+            if(snap.exists()) {
+                alert("⚠️ تنبيه: هذا العميل محظور من استخدام النظام!");
+                sendToTelegram(`🚨 محاولة اختراق! عميل محظور حاول التأجير:\n${ph}`);
+                return;
+            }
+            // كود بدء الرحلة العادي...
+        }
 
-        init: function() {
-            document.getElementById('history-date').value = new Date().toISOString().split('T')[0];
-            this.load();
-            setInterval(() => { 
-                const now = new Date();
-                document.getElementById('clock').innerText = now.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            }, 1000);
-        },
-
-        sendRemote: function(cmd) {
-            const scoot = document.getElementById('scooter').value;
-            if(!scoot) return alert("يرجى إدخال رقم السكوتر أولاً");
-            
-            const confirmMsg = cmd === 'UNLOCK' ? "تأكيد فتح السكوتر؟" : "تأكيد قفل السكوتر؟";
-            if(confirm(confirmMsg)) {
-                db.ref('commands/' + scoot).set({
-                    action: cmd,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                }).then(() => {
-                    alert("تم الإرسال بنجاح ✅");
+        // 4. تحديث قائمة المتصلين للأدمن
+        db.ref('online_sessions').on('value', snap => {
+            const list = document.getElementById('online-users-list');
+            list.innerHTML = "";
+            if(snap.exists()) {
+                Object.entries(snap.val()).forEach(([user, data]) => {
+                    list.innerHTML += `
+                        <div class="user-row">
+                            <span><span class="status-on"></span> ${user}</span>
+                            <button class="btn-kick" onclick="db.ref('online_sessions/${user}').remove()">خروج</button>
+                        </div>`;
                 });
             }
-        },
+        });
 
-        setNow: function(id) {
-            const n = new Date();
-            document.getElementById(id).value = n.getHours().toString().padStart(2,'0') + ":" + n.getMinutes().toString().padStart(2,'0');
-        },
-
-        save: async function(isErr) {
-            const scoot = document.getElementById('scooter').value;
-            const staff = document.getElementById('staff').value;
-            const start = document.getElementById('start-t').value;
-            let end = document.getElementById('end-t').value;
-            let disc = 0;
-
-            if(!scoot || !start || !staff) return alert("يرجى ملء كافة الحقول (السكوتر، الموظف، وقت الخروج)");
-
-            if(isErr) {
-                disc = parseFloat(prompt("أدخل قيمة الخصم بسبب العطل:") || 0);
-                this.setNow('end-t');
-                end = document.getElementById('end-t').value;
+        // 5. تحديث قائمة الحظر للأدمن
+        db.ref('blacklist').on('value', snap => {
+            const list = document.getElementById('blocked-users-list');
+            list.innerHTML = "";
+            if(snap.exists()) {
+                Object.entries(snap.val()).forEach(([ph, data]) => {
+                    list.innerHTML += `
+                        <div class="user-row">
+                            <span style="color:var(--err)">${data.name} (${ph})</span>
+                            <button class="btn-kick" style="background:#444" onclick="db.ref('blacklist/${ph}').remove()">فك حظر</button>
+                        </div>`;
+                });
             }
+        });
 
-            if(!end) return alert("يرجى تحديد وقت العودة");
-
-            // Calculation Logic
-            const t1 = new Date("2026-01-01 " + start);
-            let t2 = new Date("2026-01-01 " + end);
-            if(t2 < t1) t2.setDate(t2.getDate() + 1);
-            
-            const mins = Math.max(0, Math.floor((t2 - t1) / 60000));
-            const final = Math.max(0, (mins * 2) - disc);
-
-            const data = {
-                staff, scoot, start, end, mins, final,
-                isError: isErr,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-
-            try {
-                const dateKey = new Date().toISOString().split('T')[0];
-                await db.ref('history/' + dateKey).push(data);
-                alert("تم حفظ الرحلة بنجاح");
-                this.resetForm();
-            } catch (e) {
-                alert("خطأ في الاتصال");
-            }
-        },
-
-        resetForm: function() {
-            document.getElementById('scooter').value = "";
-            document.getElementById('start-t').value = "";
-            document.getElementById('end-t').value = "";
-            this.load();
-        },
-
-        load: function() {
-            const date = document.getElementById('history-date').value;
-            db.ref('history/' + date).on('value', snap => {
-                const body = document.querySelector("#data-table tbody");
-                body.innerHTML = ""; 
-                let total = 0;
-                
-                if(snap.exists()) {
-                    const logs = [];
-                    snap.forEach(child => { logs.push(child.val()); });
-                    logs.reverse().forEach(t => {
-                        const statusColor = t.isError ? 'var(--neon-red)' : 'var(--neon-green)';
-                        body.innerHTML += `
-                            <tr>
-                                <td><span class="status-dot" style="background:${statusColor}"></span><b>${t.scoot}</b></td>
-                                <td>${t.mins} دقيقة</td>
-                                <td style="color:var(--neon-blue)">${parseFloat(t.final).toFixed(2)}</td>
-                                <td style="font-size:10px">${t.isError ? '🛑 عطل' : '✅ رحلة'}</td>
-                            </tr>`;
-                        total += parseFloat(t.final);
-                    });
-                }
-                document.getElementById('shift-total').innerText = total.toFixed(2);
-            });
-        }
-    };
-
-    // Session Check
-    if(localStorage.getItem('yalla_session') === btoa('authorized')) {
-        App.showApp();
-    }
-</script>
+        // استدعاء الوظائف عند الدخول
+        // App.login() -> trackPresence(userRole);
+    </script>
 </body>
 </html>
