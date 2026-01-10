@@ -2,135 +2,80 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yalla Scooter Pro Control</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
+    <!-- 1. إصلاح مشكلة الموبايل: السطر ده بيخلي الصفحة تملأ شاشة التليفون -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yalla Scooter Login</title>
     <style>
-        :root { --p: #00d2ff; --err: #ff4b2b; --ok: #00f2fe; --bg: #0b1120; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        body { background: #0b1120; color: white; height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .loading-screen { text-align: center; width: 90%; max-width: 400px; }
+        
+        /* تنسيق حقول الإدخال لتكون مريحة للمس */
+        input { width: 100%; padding: 15px; margin-top: 15px; border-radius: 10px; border: none; font-size: 18px; text-align: center; outline: none; }
+        button { width: 100%; padding: 15px; background: #00f2ff; color: #000; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; font-weight: bold; font-size: 18px; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+        
+        #error-msg { color: #ff4b2b; margin-top: 10px; font-size: 14px; min-height: 20px; }
+
+        /* كلاس لإخفاء العناصر */
         .hidden { display: none !important; }
-        .admin-panel { background: #0f172a; border: 1px solid var(--p); border-radius: 20px; padding: 20px; margin: 15px; }
-        .user-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #222; align-items: center; }
-        .status-on { width: 10px; height: 10px; background: #00ff00; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #00ff00; }
-        .btn-kick { background: var(--err); color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-        .btn-block { background: #000; color: var(--err); border: 1px solid var(--err); padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-        table { width: 100%; text-align: right; margin-top: 10px; border-collapse: collapse; }
-        th { color: var(--p); border-bottom: 2px solid #333; padding: 10px; }
-        td { padding: 10px; border-bottom: 1px solid #222; }
+
+        /* تصميم شاشة السيستم (الداشبورد) */
+        #main-system { width: 100%; height: 100%; text-align: center; padding-top: 50px; }
     </style>
 </head>
 <body>
 
-    <div id="admin-advanced" class="admin-panel admin-only hidden">
-        <h3 style="color:var(--ok)"><i class="fas fa-users-cog"></i> الرقابة والتحكم في السيرفر</h3>
+    <!-- شاشة الدخول -->
+    <div id="login-box" class="loading-screen">
+        <h2>🔐 نظام أمان يلا سكوتر</h2>
+        <p style="color:#888; font-size:12px">أدخل كود الطوارئ للدخول</p>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px;">
-                <h4><span class="status-on"></span> المتصلون الآن</h4>
-                <div id="online-users-list"></div>
-            </div>
+        <div id="error-msg"></div>
+        
+        <!-- ضفتلك (event) عشان لو دوست انتر يدخل علطول -->
+        <input type="tel" id="fallback-pass" placeholder="****" maxlength="4" onkeypress="handleEnter(event)">
+        <button onclick="checkLogin()">دخول للنظام</button>
+    </div>
 
-            <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px;">
-                <h4><i class="fas fa-user-slash"></i> قائمة الحظر (Block)</h4>
-                <div id="blocked-users-list"></div>
-            </div>
-        </div>
+    <!-- 2. شاشة النظام الرئيسي (مخفية في البداية) -->
+    <div id="main-system" class="hidden">
+        <h1 style="color: #00f2ff;">✅ تم الدخول بنجاح</h1>
+        <p>جاري تحميل وحدات التحكم...</p>
+        <!-- هنا بتحط كود الفايربيس والبلوتوث بتاعك -->
     </div>
 
     <script>
-        // إعدادات تليجرام (ضع بياناتك هنا)
-        const TG_TOKEN = "7899750780:AAFL31roDUbqFDoP-iUL2dhNn4GtKFAPUD0";
-        const TG_CHAT_ID = "5684905593"; 
+        function checkLogin() {
+            const passInput = document.getElementById('fallback-pass');
+            const p = passInput.value;
+            const errorDiv = document.getElementById('error-msg');
 
-        function sendToTelegram(msg) {
-            fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${encodeURIComponent(msg)}`);
+            // الأكواد المسموح بها
+            if(p === "9924" || p === "1213") {
+                errorDiv.innerText = ""; // مسح أي خطأ سابق
+                
+                // إخفاء شاشة الدخول وإظهار النظام
+                document.getElementById('login-box').classList.add('hidden');
+                document.getElementById('main-system').classList.remove('hidden');
+
+                // هنا ممكن تستدعي دالة connectToScooter() لو الكود موجود في ملف تاني
+                
+            } else {
+                errorDiv.innerText = "❌ الكود غير صحيح، حاول مرة أخرى";
+                passInput.value = ""; // فضي الخانة
+                passInput.focus(); // رجع المؤشر للكتابة
+            }
         }
 
-        // إعدادات Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2J3KViN4aZYRJ43rYGFtwkmy-jZXBO6c",
-            databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
-            projectId: "yalla-scooter-pro",
+        // 3. دالة عشان زرار الـ Enter يشتغل
+        function handleEnter(e) {
+            if(e.key === 'Enter') checkLogin();
+        }
+
+        window.onerror = function(msg) {
+            document.getElementById('error-msg').innerText = "⚠️ خطأ في النظام: " + msg;
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // 1. تتبع المتصلين وطردهم
-        function trackPresence(userType) {
-            const myPresenceRef = db.ref(`online_sessions/${userType}`);
-            myPresenceRef.set({
-                status: "online",
-                last_seen: Date.now(),
-                ip: "User-Session"
-            });
-
-            // لو الأدمن مسح الجلسة، الموظف يخرج فوراً
-            myPresenceRef.on('value', snap => {
-                if(!snap.exists()) {
-                    alert("لقد تم إخراجك من قبل الإدارة!");
-                    location.reload();
-                }
-            });
-
-            myPresenceRef.onDisconnect().remove();
-        }
-
-        // 2. نظام البلوك للعملاء
-        function blockCustomer(phone, name) {
-            if(confirm(`هل تريد حظر العميل ${name} نهائياً؟`)) {
-                db.ref(`blacklist/${phone}`).set({ name, date: Date.now() });
-                sendToTelegram(`🚫 تم حظر عميل جديد:\nالاسم: ${name}\nالموبايل: ${phone}`);
-            }
-        }
-
-        // 3. التحقق من الحظر عند بدء الرحلة
-        async function startTrip() {
-            const ph = document.getElementById('cust-phone').value;
-            const snap = await db.ref(`blacklist/${ph}`).once('value');
-            if(snap.exists()) {
-                alert("⚠️ تنبيه: هذا العميل محظور من استخدام النظام!");
-                sendToTelegram(`🚨 محاولة اختراق! عميل محظور حاول التأجير:\n${ph}`);
-                return;
-            }
-            // كود بدء الرحلة العادي...
-        }
-
-        // 4. تحديث قائمة المتصلين للأدمن
-        db.ref('online_sessions').on('value', snap => {
-            const list = document.getElementById('online-users-list');
-            list.innerHTML = "";
-            if(snap.exists()) {
-                Object.entries(snap.val()).forEach(([user, data]) => {
-                    list.innerHTML += `
-                        <div class="user-row">
-                            <span><span class="status-on"></span> ${user}</span>
-                            <button class="btn-kick" onclick="db.ref('online_sessions/${user}').remove()">خروج</button>
-                        </div>`;
-                });
-            }
-        });
-
-        // 5. تحديث قائمة الحظر للأدمن
-        db.ref('blacklist').on('value', snap => {
-            const list = document.getElementById('blocked-users-list');
-            list.innerHTML = "";
-            if(snap.exists()) {
-                Object.entries(snap.val()).forEach(([ph, data]) => {
-                    list.innerHTML += `
-                        <div class="user-row">
-                            <span style="color:var(--err)">${data.name} (${ph})</span>
-                            <button class="btn-kick" style="background:#444" onclick="db.ref('blacklist/${ph}').remove()">فك حظر</button>
-                        </div>`;
-                });
-            }
-        });
-
-        // استدعاء الوظائف عند الدخول
-        // App.login() -> trackPresence(userRole);
     </script>
 </body>
 </html>
