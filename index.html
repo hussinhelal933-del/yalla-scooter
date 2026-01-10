@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yalla Bridge | جسر التحكم</title>
+    
+    <!-- مكتبات Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon: #00f2ff; --bg: #000; --green: #0aff60; --red: #ff0055; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { background: var(--bg); color: #fff; text-align: center; padding: 20px; }
+        
+        .status-card { border: 2px solid var(--neon); border-radius: 25px; padding: 25px; background: #080808; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); margin-top: 20px; }
+        .indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-left: 10px; }
+        .on { background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .off { background: var(--red); box-shadow: 0 0 10px var(--red); }
+
+        button { width: 100%; padding: 20px; background: var(--neon); color: #000; border: none; border-radius: 15px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 15px; }
+        .log-box { background: #050505; border: 1px solid #222; border-radius: 15px; height: 250px; margin-top: 20px; padding: 10px; overflow-y: auto; text-align: left; direction: ltr; font-size: 11px; color: #888; }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #111; padding-bottom: 2px; }
+    </style>
+</head>
+<body>
+
+    <h1>Yalla Bridge 🛵</h1>
+    <p style="color: #555; font-size: 12px;">وحدة الربط السحابي للإسكوتر</p>
+
+    <div class="status-card">
+        <div style="margin-bottom: 10px;">
+            <span id="bt-ind" class="indicator off"></span>
+            <span>البلوتوث: <b id="bt-text">مفصول</b></span>
+        </div>
+        <div>
+            <span id="cloud-ind" class="indicator off"></span>
+            <span>السحابة: <b id="cloud-text">غير متصل</b></span>
+        </div>
+        
+        <button id="connectBtn" onclick="connectToScooter()">اتصال بالإسكوتر الآن ⚡</button>
+    </div>
+
+    <div class="log-box" id="log">
+        <div class="log-entry">> نظام الجسر جاهز للتشغيل...</div>
+    </div>
+
+<script>
+    // 1. بيانات Firebase الخاصة بك
+    const firebaseConfig = {
+        apiKey: "AIzaSyCJOSLUFRAZV4YWYFDB9VLvju",
+        authDomain: "yala-scooter.firebaseapp.com",
+        databaseURL: "https://yalla-scooter-default-rtdb.firebaseio.com",
+        projectId: "yala-scooter",
+        storageBucket: "yala-scooter.firebasestorage.app",
+        messagingSenderId: "1014076976512",
+        appId: "1:1014076976512:web:c053191787884674720970"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    // معرفات إسكوتر شاومي (من صورتك)
+    const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const WRITE_UUID   = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    
+    let scooterCharacteristic;
+    const SCOOTER_ID = "A11"; // رقم السكوتر الذي يراقبه هذا الموبايل
+
+    function addLog(msg) {
+        const log = document.getElementById('log');
+        log.innerHTML += `<div class="log-entry">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // 2. الربط بالبلوتوث
+    async function connectToScooter() {
+        try {
+            addLog("جاري البحث عن MISCOOTER...");
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ namePrefix: 'MISCOOTER' }],
+                optionalServices: [SERVICE_UUID]
+            });
+
+            addLog("تم العثور على الإسكوتر، جاري الاقتران...");
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService(SERVICE_UUID);
+            scooterCharacteristic = await service.getCharacteristic(WRITE_UUID);
+
+            // تحديث الواجهة
+            document.getElementById('bt-ind').className = "indicator on";
+            document.getElementById('bt-text').innerText = "متصل";
+            document.getElementById('connectBtn').style.display = "none";
+            addLog("✅ متصل بالإسكوتر بلوتوث بنجاح");
+
+            startCloudSync();
+        } catch (error) {
+            addLog("❌ خطأ: " + error.message);
+            alert("تأكد من فتح البلوتوث والموقع (GPS) والضغط على زر الباور في السكوتر عند الطلب.");
+        }
+    }
+
+    // 3. مراقبة السحابة (Firebase)
+    function startCloudSync() {
+        addLog("جاري مراقبة أوامر الإدارة أونلاين...");
+        
+        db.ref(".info/connected").on("value", snap => {
+            if (snap.val() === true) {
+                document.getElementById('cloud-ind').className = "indicator on";
+                document.getElementById('cloud-text').innerText = "متصل";
+            }
+        });
+
+        // الاستماع للأوامر الموجهة لهذا السكوتر (A11)
+        db.ref('commands/' + SCOOTER_ID).on('value', snap => {
+            const cmd = snap.val();
+            if (cmd && scooterCharacteristic) {
+                addLog("وصل أمر من الإدارة: " + cmd.action);
+                sendScooterCommand(cmd.action);
+            }
+        });
+    }
+
+    // 4. إرسال الكود الفعلي للإسكوتر
+    function sendScooterCommand(action) {
+        let hex = "";
+        // أكواد التشغيل لشاومي
+        if (action === "UNLOCK") hex = "55AA03200370000069FF"; 
+        if (action === "LOCK")   hex = "55AA03200370010068FF"; 
+
+        if (hex) {
+            const bytes = new Uint8Array(hex.match(/[\da-f]{2}/gi).map(h => parseInt(h, 16)));
+            scooterCharacteristic.writeValue(bytes)
+                .then(() => addLog("🚀 تم إرسال إشارة " + action + " للإسكوتر"))
+                .catch(err => addLog("⚠️ فشل الإرسال: " + err));
+        }
+    }
+</script>
+</body>
+</html>
