@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yalla Bridge | MISCOOTER</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { background: #000; color: #00f2ff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { border: 2px solid #00f2ff; padding: 20px; border-radius: 20px; background: #080808; margin-top: 10px; }
+        #status { font-weight: bold; color: #0f6; margin: 15px 0; font-size: 18px; }
+        button { padding: 20px; background: #00f2ff; color: #000; border: none; border-radius: 15px; font-weight: bold; width: 100%; font-size: 20px; cursor: pointer; }
+        .log { background: #111; color: #888; padding: 10px; border-radius: 10px; height: 200px; overflow-y: auto; font-size: 11px; margin-top: 20px; text-align: left; border: 1px solid #222; }
+    </style>
+</head>
+<body>
+    <h2>جسر سكوتر يالا 🛵</h2>
+    <p style="font-size: 12px; color: #666;">افتح هذه الصفحة من موبايل الأندرويد داخل السكوتر</p>
+    
+    <div class="box">
+        <div id="status">🔴 بلوتوث: غير متصل</div>
+        <button id="connectBtn" onclick="connectScooter()">ربط بالإسكوتر الآن</button>
+    </div>
+
+    <div class="log" id="log">-- سجل العمليات --</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCJOSLUFRAZV4YWYFDB9VLvju",
+        authDomain: "yala-scooter.firebaseapp.com",
+        databaseURL: "https://yalla-scooter-default-rtdb.firebaseio.com",
+        projectId: "yala-scooter",
+        storageBucket: "yala-scooter.firebasestorage.app",
+        messagingSenderId: "1014076976512",
+        appId: "1:1014076976512:web:c053191787884674720970"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // المعرفات الخاصة بسكوتر Xiaomi/Nordic من صورتك
+    const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const WRITE_UUID   = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; 
+    
+    let scooterChar;
+
+    function logger(m) {
+        const l = document.getElementById('log');
+        l.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${m}</div>`;
+        l.scrollTop = l.scrollHeight;
+    }
+
+    async function connectScooter() {
+        if (!navigator.bluetooth) {
+            alert("عفواً: متصفحك لا يدعم البلوتوث. استخدم Google Chrome على أندرويد.");
+            return;
+        }
+
+        try {
+            logger("جاري البحث عن MISCOOTER...");
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ namePrefix: 'MISCOOTER' }],
+                optionalServices: [SERVICE_UUID]
+            });
+
+            logger("تم اختيار الجهاز. جاري الربط...");
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService(SERVICE_UUID);
+            scooterChar = await service.getCharacteristic(WRITE_UUID);
+
+            document.getElementById('status').innerText = "✅ متصل وجاهز للأوامر";
+            document.getElementById('connectBtn').style.display = 'none';
+            logger("متصل بالسكوتر بنجاح!");
+            
+            startCloudListen();
+        } catch (e) {
+            logger("خطأ: " + e.message);
+        }
+    }
+
+    function startCloudListen() {
+        logger("بدء مراقبة السحابة للأوامر...");
+        // السكوتر ده هيرقب أوامر سكوتر A11 مثلاً
+        db.ref('commands/A11').on('value', snap => {
+            const cmd = snap.val();
+            if (cmd && scooterChar) {
+                logger("وصل أمر من الإدارة: " + cmd.action);
+                sendHex(cmd.action);
+            }
+        });
+    }
+
+    function sendHex(action) {
+        let hex = "";
+        // أكواد تجريبية للفتح والقفل
+        if (action === "UNLOCK") hex = "55AA03200370000069FF"; 
+        if (action === "LOCK")   hex = "55AA03200370010068FF"; 
+
+        if (hex) {
+            const bytes = new Uint8Array(hex.match(/[\da-f]{2}/gi).map(h => parseInt(h, 16)));
+            scooterChar.writeValue(bytes)
+                .then(() => logger("تم إرسال الإشارة للسكوتر 🚀"))
+                .catch(err => logger("فشل الإرسال: " + err));
+        }
+    }
+</script>
+</body>
+</html>
