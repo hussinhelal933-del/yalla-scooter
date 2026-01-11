@@ -3,366 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Command V37 | Turbo Edition</title>
-    
+    <title>Yalla Command V39 | Premium Edition</title>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;500;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- DESIGN: BLACK & BLUE GLASS --- */
         :root {
-            --bg-gradient: linear-gradient(135deg, #000000, #0a0e27, #051937);
-            --glass-bg: rgba(10, 15, 30, 0.85);
-            --glass-border: rgba(0, 210, 255, 0.2);
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
-            --primary: #00d2ff; --secondary: #243b55; --accent: #007cf0;
-            --danger: #ff0055; --warn: #ffcc00; --success: #00ff9d;
-            --text: #ffffff; --text-muted: #8892b0;
+            --main-bg: #05080a;
+            --glass-bg: rgba(10, 15, 25, 0.7);
+            --primary-blue: #00d2ff;
+            --accent-blue: #0072ff;
+            --danger: #ff0055;
+            --text-main: #e0e0e0;
+            --border-glass: rgba(0, 210, 255, 0.2);
         }
 
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: all 0.3s; outline: none; }
-        body { margin: 0; background: var(--bg-gradient); background-attachment: fixed; color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
 
-        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); }
-        
-        .sidebar { width: 280px; background: rgba(0, 5, 15, 0.7); backdrop-filter: blur(25px); border-left: 1px solid var(--glass-border); display: flex; flex-direction: column; z-index: 1000; overflow-y: auto; }
-        .brand { padding: 30px 20px; text-align: center; color: var(--primary); font-family: 'Rajdhani'; font-size: 28px; font-weight: 900; text-shadow: 0 0 20px rgba(0,210,255,0.4); border-bottom: 1px solid var(--glass-border); letter-spacing: 2px; }
-        
-        .shift-widget { padding: 15px; margin: 15px; background: rgba(0, 210, 255, 0.05); border-radius: 12px; border: 1px solid var(--glass-border); text-align: center; }
-        
-        .nav-group { flex: 1; padding: 10px; }
-        .nav-item { padding: 15px 20px; margin-bottom: 8px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 15px; font-weight: 600; border-radius: 12px; position: relative; overflow: hidden; }
-        .nav-item:hover, .nav-item.active { background: linear-gradient(90deg, rgba(0,210,255,0.1), transparent); color: var(--primary); border-right: 3px solid var(--primary); }
+        body { 
+            margin: 0; 
+            background: radial-gradient(circle at center, #101a25 0%, #05080a 100%);
+            color: var(--text-main); 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
 
-        .main-content { flex: 1; padding: 25px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .main-content::before { content: ''; position: absolute; top: -20%; left: -20%; width: 50%; height: 50%; background: radial-gradient(circle, rgba(0,210,255,0.1), transparent 70%); pointer-events: none; z-index: -1; }
+        /* القائمة الجانبية الفخمة */
+        .sidebar { 
+            width: 280px; 
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border-glass); 
+            display: flex; 
+            flex-direction: column;
+            z-index: 100;
+        }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--glass-border); }
-        .section { display: none; flex: 1; overflow-y: auto; padding-bottom: 100px; padding-right: 5px; }
-        .section.active { display: block; animation: fadeIn 0.5s ease; }
+        .logo {
+            padding: 40px 20px;
+            font-family: 'Rajdhani';
+            font-size: 32px;
+            text-align: center;
+            letter-spacing: 2px;
+            background: linear-gradient(to bottom, #fff, var(--primary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+        }
 
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-        .kpi-card { background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2)); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); padding: 20px; border-radius: 20px; text-align: center; position: relative; overflow: hidden; }
-        .kpi-card::after { content:''; position: absolute; bottom:0; left:0; width:100%; height:3px; background: var(--primary); box-shadow: 0 0 10px var(--primary); }
-        .kpi-val { font-family: 'Rajdhani'; font-size: 32px; font-weight: 700; color: #fff; display: block; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .nav-item { 
+            padding: 18px 25px; 
+            cursor: pointer; 
+            color: #888; 
+            margin: 8px 15px;
+            border-radius: 15px;
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            transition: 0.4s all cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
 
-        .unit-card { background: rgba(10, 15, 30, 0.6); border: 1px solid var(--glass-border); border-radius: 24px; padding: 15px; margin-bottom: 15px; position: relative; transition: 0.3s; }
-        .unit-card:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
-        .unit-card.paused { border-color: var(--warn); background: rgba(255, 204, 0, 0.05); }
-        .unit-timer { font-family: 'Rajdhani'; font-size: 40px; text-align: center; color: var(--primary); margin: 10px 0; font-weight: 700; text-shadow: 0 0 15px rgba(0,210,255,0.4); }
-        
-        .plate-badge { background: #000; color: var(--primary); border: 1px solid var(--primary); border-radius: 6px; padding: 4px 10px; font-family: 'Rajdhani'; font-weight: 900; font-size: 18px; box-shadow: 0 0 10px rgba(0,210,255,0.2); }
-        
-        .glass-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; font-size: 14px; }
-        .glass-table th { padding: 15px; text-align: right; color: var(--text-muted); font-weight: 600; }
-        .glass-table td { background: rgba(255,255,255,0.02); padding: 15px; border: 1px solid rgba(255,255,255,0.05); color: #fff; }
+        .nav-item i { font-size: 20px; }
 
-        input, select, textarea { background: rgba(0, 0, 0, 0.8) !important; border: 1px solid var(--glass-border) !important; color: #fff !important; border-radius: 12px !important; padding: 14px !important; width: 100%; margin-bottom: 10px; font-size: 16px; }
-        select option { background: #111 !important; color: #fff !important; }
+        .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
 
-        .btn { padding: 12px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; width: 100%; margin-bottom: 8px; text-transform: uppercase; }
-        .btn-primary { background: linear-gradient(90deg, var(--accent), var(--primary)); color: #fff; }
-        .btn-danger { background: linear-gradient(90deg, #ff416c, #ff4b2b); color: white; }
-        .btn-warn { background: linear-gradient(90deg, #f7971e, #ffd200); color: #000; }
-        .btn-success { background: linear-gradient(90deg, #11998e, #38ef7d); color: white; }
+        .nav-item.active { 
+            background: linear-gradient(45deg, rgba(0,210,255,0.1), transparent);
+            color: var(--primary-blue); 
+            border-right: 4px solid var(--primary-blue);
+            box-shadow: -10px 0 20px rgba(0,210,255,0.1);
+        }
 
-        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        /* المحتوى الرئيسي */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+
+        /* أزرار فخمة */
+        .btn { 
+            padding: 15px 25px; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: 0.3s;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+        }
+
+        .btn-primary:hover { box-shadow: 0 6px 25px rgba(0, 210, 255, 0.5); transform: translateY(-2px); }
+
+        /* الكروت الزجاجية */
+        .unit-card { 
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border-glass);
+            border-radius: 25px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: 0.4s;
+        }
+
+        .unit-card:hover { border-color: var(--primary-blue); transform: translateY(-5px); }
+
+        .unit-card h2 { font-family: 'Rajdhani'; font-size: 28px; margin: 0; color: var(--primary-blue); }
+
+        .timer { font-size: 35px; font-weight: 900; margin: 15px 0; font-family: 'Rajdhani'; }
+
+        /* تخصيص نافذة تنبيه SweetAlert لتصبح زجاجية زرقاء في أسود */
+        .glass-popup {
+            background: rgba(5, 10, 15, 0.95) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1px solid var(--primary-blue) !important;
+            border-radius: 30px !important;
+            color: #fff !important;
+        }
+
+        .glass-input {
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid var(--border-glass) !important;
+            border-radius: 12px !important;
+            color: #fff !important;
+            margin: 10px 0 !important;
+        }
+
+        .glass-input:focus {
+            border-color: var(--primary-blue) !important;
+            box-shadow: 0 0 10px rgba(0,210,255,0.3) !important;
+        }
+
+        /* تأثير التنبيه الأحمر للرحلات الطويلة */
+        @keyframes pulse-danger {
+            0% { border-color: var(--danger); box-shadow: 0 0 5px var(--danger); }
+            50% { border-color: #ff4d8d; box-shadow: 0 0 20px var(--danger); }
+            100% { border-color: var(--danger); box-shadow: 0 0 5px var(--danger); }
+        }
+        .long-trip { animation: pulse-danger 2s infinite; }
+
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="glass-panel" style="padding:50px; border-radius:30px; text-align:center; width:380px;">
-            <h1 style="font-family:'Rajdhani'; color:var(--primary); margin:0 0 10px; font-size: 36px;">YALLA COMMAND</h1>
-            <p style="color:#666; margin-bottom: 30px;">V37 | نسخة السرعة القصوى</p>
-            <input type="password" id="passInput" style="text-align:center; font-size:24px; letter-spacing:5px;" placeholder="****">
-            <button onclick="login()" class="btn btn-primary" style="margin-top:20px; padding: 15px;">تسجيل الدخول</button>
-        </div>
-    </div>
-
     <nav class="sidebar">
-        <div class="brand"><i class="fas fa-bolt"></i> YALLA</div>
-        <div class="shift-widget">
-            <div style="font-size:12px; color:var(--primary); margin-bottom:8px; font-weight:bold;">نظام الحضور</div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-success" onclick="recordAttendance('in')"><i class="fas fa-sign-in-alt"></i></button>
-                <button class="btn btn-danger" onclick="recordAttendance('out')"><i class="fas fa-sign-out-alt"></i></button>
-            </div>
+        <div class="logo">YALLA COMMAND</div>
+        <div id="nav-ops" class="nav-item active" onclick="nav('ops')">
+            <i class="fas fa-rocket"></i> الرحلات النشطة
         </div>
-        <div class="nav-group">
-            <div class="nav-item active" onclick="nav('ops')"><i class="fas fa-rocket"></i> <span>الرحلات</span></div>
-            <div class="nav-item" onclick="nav('clients')"><i class="fas fa-users"></i> <span>العملاء</span></div>
-            <div class="nav-item" onclick="nav('maint')"><i class="fas fa-tools"></i> <span>الصيانة</span></div>
-            <div id="adm-nav" class="nav-item" style="display:none" onclick="nav('admin')"><i class="fas fa-chart-line"></i> <span>المالية</span></div>
-            <div id="set-nav" class="nav-item" style="display:none" onclick="nav('settings')"><i class="fas fa-sliders-h"></i> <span>الإعدادات</span></div>
+        <div id="nav-maint" class="nav-item" onclick="nav('maint')">
+            <i class="fas fa-microchip"></i> الصيانة الذكية
         </div>
-        <div style="margin-top:auto; padding:20px; border-top:1px solid var(--glass-border);">
-            <div id="shift-status-text" style="text-align:center; font-size:12px; margin-bottom:8px; color:var(--text-muted)">الوردية مغلقة</div>
-            <button id="shift-btn" onclick="toggleShift()" class="btn btn-primary">فتح وردية</button>
-            <button class="btn btn-danger" onclick="addExpensePopup()" style="margin-top:10px; background: rgba(255,0,85,0.2); border:1px solid #ff0055;">
-                <i class="fas fa-receipt"></i> تسجيل مصروف
+        <div id="nav-admin" class="nav-item" onclick="nav('admin')">
+            <i class="fas fa-shield-halved"></i> مركز التحكم
+        </div>
+        
+        <div style="margin-top:auto; padding:30px;">
+            <button onclick="toggleShift()" class="btn btn-primary" style="width:100%">
+                <i class="fas fa-power-off"></i> فتح وردية جديدة
             </button>
         </div>
     </nav>
 
     <main class="main-content">
-        <div class="top-bar">
-            <h2 id="p-title" style="margin:0; font-family:'Rajdhani'; color:var(--text);">Dashboard</h2>
-            <div id="clock" style="font-family:'Rajdhani'; color:var(--primary); font-size:22px; font-weight:900;">00:00:00</div>
-        </div>
-
-        <div class="kpi-grid">
-            <div class="kpi-card"><span class="kpi-val" id="k-active" style="color:var(--primary)">0</span><small>سكوتر بالخارج</small></div>
-            <div class="kpi-card"><span class="kpi-val" id="k-drawer" style="color:#2ecc71">0</span><small>نقدية بالدرج</small></div>
-            <div class="kpi-card"><span class="kpi-val" id="k-wallet" style="color:#f1c40f">0</span><small>محافظ</small></div>
-            <div class="kpi-card"><span class="kpi-val" id="k-maint" style="color:var(--danger)">0</span><small>أعطال</small></div>
-        </div>
-
-        <div id="sec-ops" class="section active">
-            <button class="btn btn-primary" onclick="startTripPopup()" style="padding:20px; font-size:18px; margin-bottom:30px;">
-                <i class="fas fa-play-circle"></i> بدء رحلة سريعة
-            </button>
-            <div id="fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:25px;"></div>
-        </div>
-
-        <div id="sec-clients" class="section">
-            <input type="text" placeholder="🔍 بحث عن عميل..." oninput="loadClients(this.value)">
-            <table class="glass-table">
-                <thead><tr><th>العميل</th><th>الهاتف</th><th>ملاحظات</th><th>الحالة</th></tr></thead>
-                <tbody id="clients-list"></tbody>
-            </table>
-        </div>
-
-        <div id="sec-maint" class="section">
-            <div style="display:flex; gap:30px;">
-                <div style="flex:1">
-                    <h3 style="color:var(--text-muted);">🔴 الأعطال الحالية</h3>
-                    <div id="maint-list"></div>
-                </div>
-                <div style="flex:1">
-                    <h3 style="color:var(--primary);">🔧 إبلاغ عن عطل</h3>
-                    <div class="glass-panel" style="padding:30px; border-radius:20px;">
-                        <select id="maint-select-scooter"><option>تحميل...</option></select>
-                        <textarea id="maint-reason" rows="4" placeholder="وصف العطل..."></textarea>
-                        <button class="btn btn-danger" onclick="sendToMaint()" style="padding:15px;">تسجيل عطل</button>
-                    </div>
-                </div>
+        <div id="sec-ops" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <h1 style="font-weight:900; letter-spacing:1px;">العمليات الميدانية</h1>
+                <button class="btn btn-primary" onclick="startTripPopup()">
+                    <i class="fas fa-plus-circle"></i> رحلة فاخرة جديدة
+                </button>
             </div>
-        </div>
-        
-        <div id="sec-admin" class="section">
-            <div style="background:rgba(255,255,255,0.02); padding:20px; border-radius:20px; margin-bottom:30px; border:1px solid var(--glass-border);">
-                <input type="date" id="admin-date-picker" onchange="loadDailyStats(this.value)">
-            </div>
-            <div id="day-stats-box">
-                <p>إجمالي الإيراد: <span id="day-rev">0</span> ج</p>
-                <p>المصروفات: <span id="day-exp">0</span> ج</p>
-            </div>
-            <table class="glass-table">
-                <thead><tr><th>الموظف</th><th>كاش</th><th>محافظ</th><th>الصافي</th></tr></thead>
-                <tbody id="day-shifts-list"></tbody>
-            </table>
-        </div>
-
-        <div id="sec-settings" class="section">
-            <div class="kpi-card" style="text-align:right; margin-bottom:30px;">
-                <h3 style="color:var(--primary)">💰 التسعير</h3>
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
-                    <div><label>فتح العداد</label><input type="number" id="conf-baseCost" onchange="saveConfig()"></div>
-                    <div><label>دقائق الفتح</label><input type="number" id="conf-baseMins" onchange="saveConfig()"></div>
-                    <div><label>سعر الدقيقة</label><input type="number" id="conf-pricePerMin" onchange="saveConfig()"></div>
-                </div>
-            </div>
-            <div class="kpi-card" style="text-align:right;">
-                <h3 style="color:var(--primary)">🛵 الأسطول</h3>
-                <input type="text" id="new-scooter-name" placeholder="S1" style="width:100px;">
-                <button class="btn btn-primary" onclick="addNewScooter()">إضافة</button>
-                <div id="scooter-mngt-list" style="margin-top:20px; display:flex; flex-wrap:wrap; gap:15px;"></div>
+            <div id="fleet-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:25px;">
+                <!-- الكروت ستظهر هنا -->
             </div>
         </div>
     </main>
 
-    <script>
-        const TELEGRAM = { token: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs", chat: "5684905593" };
-        firebase.initializeApp({
-            apiKey: "AIzaSyB2J3KViN4aZYRJ43rYGFtwkmy-jZXBO6c",
-            authDomain: "yalla-scooter-pro.firebaseapp.com",
-            databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
-            projectId: "yalla-scooter-pro",
-            storageBucket: "yalla-scooter-pro.appspot.com",
-        });
-        const db = firebase.database();
-        const storage = firebase.storage();
-        
-        let activeTrips = {};
-        let config = { baseCost: 40, baseMins: 15, pricePerMin: 2.66 };
-        let currentShiftId = null;
-        let currentUser = "Guest";
-        let isAdmin = false;
-        let availableScooters = [];
+<script>
+    // إعدادات Firebase
+    firebase.initializeApp({ databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" });
+    const db = firebase.database();
+    let activeTrips = {};
 
-        function login() {
-            const p = document.getElementById('passInput').value;
-            if(p === "1213") { currentUser = "موظف"; isAdmin = false; document.getElementById('login-overlay').style.display = 'none'; initSystem(); }
-            else if(p === "9924") { currentUser = "المدير"; isAdmin = true; document.getElementById('adm-nav').style.display = 'flex'; document.getElementById('set-nav').style.display = 'flex'; document.getElementById('login-overlay').style.display = 'none'; initSystem(); }
-            else { Swal.fire('خطأ', 'رمز الدخول غير صحيح', 'error'); }
-        }
+    function nav(id) {
+        document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('sec-' + id).style.display = 'block';
+        document.getElementById('nav-' + id).classList.add('active');
+    }
 
-        function initSystem() {
-            db.ref('settings').on('value', s => { if(s.exists()) config = s.val(); });
-            db.ref('shifts/current').on('value', s => {
-                const btn = document.getElementById('shift-btn');
-                if(s.exists()) { currentShiftId = s.key; btn.innerText = "تسليم الوردية"; btn.classList.replace('btn-primary', 'btn-danger'); }
-                else { currentShiftId = null; btn.innerText = "فتح وردية"; btn.classList.replace('btn-danger', 'btn-primary'); }
-            });
-            db.ref('inventory').on('value', snap => {
-                availableScooters = [];
-                const list = document.getElementById('scooter-mngt-list');
-                const maintSelect = document.getElementById('maint-select-scooter');
-                const maintList = document.getElementById('maint-list');
-                list.innerHTML = ''; maintSelect.innerHTML = '<option value="">اختر السكوتر...</option>'; maintList.innerHTML = '';
-                let mc = 0;
-                snap.forEach(doc => {
-                    const s = doc.val(); const key = doc.key;
-                    list.innerHTML += `<div class="admin-badge" onclick="manageScooter('${key}','${s.status}')"><div class="plate-badge">${key}</div></div>`;
-                    if(s.status === 'available') { availableScooters.push(key); maintSelect.innerHTML += `<option value="${key}">${key}</option>`; }
-                    else if(s.status === 'maintenance') { mc++; maintList.innerHTML += `<div style="padding:10px; border:1px solid red; margin-bottom:5px;">${key} - ${s.issue}</div>`; }
-                });
-                document.getElementById('k-maint').innerText = mc;
-            });
-            db.ref('active_trips').on('value', snap => { activeTrips = snap.val() || {}; renderTrips(); });
-        }
-
-        // --- دالة ضغط الصور ---
-        async function compressImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800;
-                        const scale = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scale;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.6);
-                    };
-                };
-            });
-        }
-
-        async function startTripPopup() {
-            if(!currentShiftId) return Swal.fire('تنبيه', 'يجب فتح الوردية أولاً!', 'warning');
-            let opts = '<option value="" disabled selected>-- اختر السكوتر --</option>';
-            availableScooters.forEach(s => opts += `<option value="${s}">${s}</option>`);
-
-            const { value: res } = await Swal.fire({
-                title: 'بدء رحلة',
-                html: `
-                    <select id="sw-s" class="swal2-input">${opts}</select>
-                    <input id="sw-ph" class="swal2-input" placeholder="رقم العميل" oninput="checkClientNote(this.value)">
-                    <div id="client-note-alert" style="color:#ffcc00; font-weight:bold;"></div>
-                    <input id="sw-n" class="swal2-input" placeholder="اسم العميل">
-                    <input id="sw-b" type="hidden" value="100">
-                    <input id="sw-img" type="file" accept="image/*" class="swal2-file">
-                `,
-                preConfirm: () => {
-                    const img = document.getElementById('sw-img').files[0];
-                    if(!img || !document.getElementById('sw-s').value) return Swal.showValidationMessage('بيانات ناقصة');
-                    return [document.getElementById('sw-ph').value, document.getElementById('sw-s').value, document.getElementById('sw-n').value, img];
-                }
-            });
-
-            if(res) {
-                Swal.fire({ title: 'جاري الضغط والرفع...', didOpen: () => Swal.showLoading() });
-                const [ph, s, name, file] = res;
-                const compFile = await compressImage(file);
-                const ref = storage.ref(`ids/${Date.now()}`);
-                const snap = await ref.put(compFile);
-                const url = await snap.ref.getDownloadURL();
-                db.ref('active_trips').push({ phone: ph, scooter: s, client: name||'زائر', idPhoto: url, startTime: Date.now(), status: 'active', pausedDuration: 0, shiftId: currentShiftId });
-                db.ref('inventory/'+s).update({ status: 'active' });
-                db.ref('clients/'+ph).update({ name: name||'زائر' });
-                Swal.fire('تم البدء', '', 'success');
-                sendTG(`🚀 رحلة بدأت: ${s}`);
-            }
-        }
-
-        async function terminateTrip(key) {
-            const d = activeTrips[key];
-            const diff = (d.status==='active'?Date.now():d.pauseStart) - d.startTime - (d.pausedDuration||0);
-            const mins = Math.floor(diff/60000);
-            let cost = Math.round(mins > config.baseMins ? config.baseCost + (mins-config.baseMins)*config.pricePerMin : config.baseCost);
-            
-            const { value: res } = await Swal.fire({
-                title: 'إنهاء الرحلة',
-                html: `<h1>${cost} ج</h1><input id="sw-disc" type="number" placeholder="خصم"><select id="sw-method"><option value="cash">كاش</option><option value="wallet">محفظة</option></select><input id="sw-bat" type="hidden" value="0">`,
-                preConfirm: () => ({ disc: parseFloat(document.getElementById('sw-disc').value)||0, method: document.getElementById('sw-method').value })
-            });
-
-            if(res) {
-                const final = cost - res.disc;
-                const day = new Date().toISOString().split('T')[0];
-                db.ref(`history/${day}`).push({ scooter: d.scooter, final, method: res.method });
-                db.ref('inventory/'+d.scooter).update({ status: 'available' });
-                db.ref('active_trips/'+key).remove();
-                sendTG(`🏁 إنهاء: ${d.scooter} | ${final}ج`);
-            }
-        }
-
-        async function checkClientNote(ph) {
-            if(ph.length < 11) return;
-            const s = await db.ref('clients/'+ph).once('value');
-            document.getElementById('client-note-alert').innerText = (s.exists() && s.val().note) ? "⚠️ " + s.val().note : "";
-        }
-
-        function renderTrips() {
-            const grid = document.getElementById('fleet-grid'); grid.innerHTML = "";
-            let count = 0;
-            for(let k in activeTrips) {
-                count++; const d = activeTrips[k];
-                grid.innerHTML += `<div class="unit-card"><span class="plate-badge">${d.scooter}</span><p>${d.client}</p><div class="unit-timer" id="timer-${k}">00:00</div><button class="btn btn-danger" onclick="terminateTrip('${k}')">إنهاء</button></div>`;
-            }
-            document.getElementById('k-active').innerText = count;
-        }
-
-        setInterval(() => {
-            const now = Date.now();
-            for(let k in activeTrips) {
-                const d = activeTrips[k]; const el = document.getElementById('timer-'+k);
-                if(!el) continue;
-                let s = Math.floor((now - d.startTime - (d.pausedDuration||0))/1000);
-                el.innerText = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-            }
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-        }, 1000);
-
-        function nav(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('sec-'+id).classList.add('active');
-        }
-
-        function toggleShift() {
-            if(!currentShiftId) {
-                db.ref('shifts/current').set({ user: currentUser, start: Date.now(), status: 'open' });
-                Swal.fire('تم الفتح', '', 'success');
-            } else {
-                db.ref('shifts/current').remove();
-                Swal.fire('تم الغلق', '', 'info');
-            }
-        }
-        
-        function sendTG(t) { fetch(`https://api.telegram.org/bot${TELEGRAM.token}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ chat_id: TELEGRAM.chat, text: t }) }); }
-    </script>
-</body>
-</html>
+    // شاشة بدء الرحلة - التصميم الفخم
+    async function startTripPopup() {
+        const { value: res } = await Swal.fire({
+            title: 'بدء رحلة جديدة',
+            html: `
+                <div style="padding:10px;">
+                    <input id="sw-ph" class="glass-input swal2-input" placeholder="رقم هاتف العميل">
+                    <div id="client-debt-info"></div>
+                    <select id="sw-sc" class="glass-input swal2-input">
+                        <option value="SCOOTER - 01">SCOOTER - 01</option>
+                        <option value="SCOOTER - 02">SCOOTER - 02</option>
+                        <option value="SCO
