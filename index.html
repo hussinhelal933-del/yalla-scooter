@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Command V35 | Smart Business</title>
+    <title>Yalla Command V36 | Stable System</title>
     
     <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -93,7 +93,7 @@
     <div id="login-overlay">
         <div class="glass-panel" style="padding:50px; border-radius:30px; text-align:center; width:380px; box-shadow: 0 0 50px rgba(0,210,255,0.1);">
             <h1 style="font-family:'Rajdhani'; color:var(--primary); margin:0 0 10px; font-size: 36px;">YALLA COMMAND</h1>
-            <p style="color:#666; margin-bottom: 30px;">V35 | نظام التاجر الشاطر</p>
+            <p style="color:#666; margin-bottom: 30px;">V36 | النظام الآمن</p>
             <input type="password" id="passInput" style="text-align:center; font-size:24px; letter-spacing:5px; background: rgba(255,255,255,0.05) !important;" placeholder="****">
             <button onclick="login()" class="btn btn-primary" style="margin-top:20px; padding: 15px;">تسجيل الدخول</button>
         </div>
@@ -136,13 +136,13 @@
         <div class="kpi-grid">
             <div class="kpi-card"><span class="kpi-val" id="k-active" style="color:var(--primary)">0</span><small>سكوتر بالخارج</small></div>
             <div class="kpi-card"><span class="kpi-val" id="k-drawer" style="color:#2ecc71">0</span><small>نقدية بالدرج</small></div>
-            <div class="kpi-card"><span class="kpi-val" id="k-wallet" style="color:#f1c40f">0</span><small>فودافون/محافظ</small></div>
+            <div class="kpi-card"><span class="kpi-val" id="k-wallet" style="color:#f1c40f">0</span><small>محافظ</small></div>
             <div class="kpi-card"><span class="kpi-val" id="k-maint" style="color:var(--danger)">0</span><small>أعطال</small></div>
         </div>
 
         <div id="sec-ops" class="section active">
             <button class="btn btn-primary" onclick="startTripPopup()" style="padding:20px; font-size:18px; margin-bottom:30px; box-shadow: 0 0 30px rgba(0,210,255,0.15);">
-                <i class="fas fa-play-circle"></i> بدء رحلة فورية
+                <i class="fas fa-play-circle"></i> بدء رحلة (آمن)
             </button>
             <div id="fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:25px;"></div>
         </div>
@@ -264,7 +264,6 @@
                     const v = s.val(); currentShiftId = s.key;
                     btn.innerText = "تسليم الوردية"; btn.classList.replace('btn-primary', 'btn-danger');
                     txt.innerText = `وردية: ${v.user}`; txt.style.color = "#2ecc71";
-                    // Net Cash = Cash Income - Expenses
                     const netCash = (v.cashIncome || 0) - (v.totalExpenses || 0);
                     kpiDrawer.innerText = netCash + " ج";
                     kpiWallet.innerText = (v.walletIncome || 0) + " ج";
@@ -353,22 +352,29 @@
 
             if(res) {
                 const [ph, s, bat, name, file] = res;
-                // Instant Start
-                const newRef = db.ref('active_trips').push();
-                newRef.set({
-                    phone: ph, scooter: s, startBat: bat, client: name||'زائر',
-                    idPhoto: "https://i.gifer.com/ZZ5H.gif", startTime: Date.now(), status: 'active', pausedDuration: 0, shiftId: currentShiftId
-                });
-                db.ref('inventory/'+s).update({ status: 'active' });
+                // --- Safe Mode: Upload First ---
+                Swal.fire({ title: 'جاري رفع البطاقة...', html: 'يرجى الانتظار...', didOpen: () => Swal.showLoading(), background: 'rgba(0,0,0,0.9)', color:'#fff' });
                 
-                // Add/Update Client
-                db.ref('clients/'+ph).update({ name: name || 'زائر', lastSeen: Date.now() });
+                try {
+                    const ref = storage.ref(`ids/${Date.now()}_${ph}`);
+                    const snapshot = await ref.put(file);
+                    const url = await snapshot.ref.getDownloadURL();
+                    
+                    // Create Trip
+                    db.ref('active_trips').push({
+                        phone: ph, scooter: s, startBat: bat, client: name||'زائر',
+                        idPhoto: url, startTime: Date.now(), status: 'active', pausedDuration: 0, shiftId: currentShiftId
+                    });
+                    
+                    db.ref('inventory/'+s).update({ status: 'active' });
+                    db.ref('clients/'+ph).update({ name: name || 'زائر', lastSeen: Date.now() });
 
-                Swal.fire({ icon:'success', title:'بدأت الرحلة!', timer: 1000, showConfirmButton: false });
-                sendTG(`🚀 <b>رحلة بدأت</b>\n🛵 ${s}\n👤 ${name}`);
-
-                const ref = storage.ref(`ids/${Date.now()}_${ph}`);
-                ref.put(file).then(snap => snap.ref.getDownloadURL()).then(url => { newRef.update({ idPhoto: url }); });
+                    Swal.fire({ icon:'success', title:'تم البدء', timer: 1000, showConfirmButton: false });
+                    sendTG(`🚀 <b>رحلة بدأت</b>\n🛵 ${s}\n👤 ${name}`);
+                    
+                } catch(e) {
+                    Swal.fire('خطأ', 'فشل رفع الصورة، تأكد من الإنترنت', 'error');
+                }
             }
         }
 
@@ -407,25 +413,20 @@
                 const final = cost - res.disc; 
                 const today = new Date().toISOString().split('T')[0];
                 
-                // Save Client Note if exists
-                if(res.note && d.phone) {
-                    db.ref('clients/'+d.phone).update({ note: res.note });
-                }
+                if(res.note && d.phone) { db.ref('clients/'+d.phone).update({ note: res.note }); }
 
                 if(currentShiftId) {
                     db.ref('shifts/current').transaction(s => { 
                         if(s) {
                             if(res.method === 'cash') s.cashIncome = (s.cashIncome || 0) + final;
                             else s.walletIncome = (s.walletIncome || 0) + final;
-                            s.totalCash = (s.totalCash || 0) + final; // Total for records
+                            s.totalCash = (s.totalCash || 0) + final;
                         } 
                         return s; 
                     });
                 }
                 
-                db.ref(`history/${today}`).push({ 
-                    scooter:d.scooter, client:d.client, mins, final, endBat: res.bat, method: res.method 
-                });
+                db.ref(`history/${today}`).push({ scooter:d.scooter, client:d.client, mins, final, endBat: res.bat, method: res.method });
                 db.ref('inventory/'+d.scooter).update({ status: 'available' });
                 db.ref('active_trips/'+key).remove();
                 sendTG(`🏁 <b>إنهاء رحلة</b>\n🛵 ${d.scooter}\n💰 ${final} ج (${res.method === 'cash' ? 'كاش' : 'محفظة'})`);
@@ -435,14 +436,10 @@
         async function checkClientNote(ph) {
             if(ph.length < 10) return;
             const s = await db.ref('clients/'+ph).once('value');
-            if(s.exists() && s.val().note) {
-                document.getElementById('client-note-alert').innerText = "⚠️ ملاحظة سابقة: " + s.val().note;
-            } else {
-                document.getElementById('client-note-alert').innerText = "";
-            }
+            if(s.exists() && s.val().note) { document.getElementById('client-note-alert').innerText = "⚠️ ملاحظة سابقة: " + s.val().note; } 
+            else { document.getElementById('client-note-alert').innerText = ""; }
         }
 
-        // --- SHARED & UTILS ---
         function renderTrips() {
             const grid = document.getElementById('fleet-grid'); grid.innerHTML = ""; let count = 0;
             for(let k in activeTrips) {
