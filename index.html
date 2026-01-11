@@ -1,40 +1,309 @@
-// --- منطق حماية البطارية (يُضاف داخل دالة بدء رحلة جديدة) ---
-async function startSecureTrip(scooterId, startBat) {
-    // 1. جلب آخر حالة مسجلة للسكوتر
-    const lastStatus = await db.ref(`scooters_status/${scooterId}`).once('value');
-    const lastBat = lastStatus.val()?.lastBattery || 100;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yalla Command | Tactical V13</title>
+    
+    <!-- Scripts & Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    // 2. التحقق من وجود فجوة (Gap)
-    const gap = lastBat - startBat;
-    if (gap > 5) { // لو في نقص أكثر من 5% بدون شحن أو رحلة
-        sendTG(`🚨 <b>تنبيه تلاعب محتمل!</b>\n🛵 سكوتر: ${scooterId}\n📉 فجوة بطارية: ${gap}%\nالسكوتر ترك المحل بـ ${lastBat}% وفُتح الآن بـ ${startBat}%\nيرجى مراجعة الموظف فوراً!`);
-    }
+    <style>
+        :root {
+            --bg: #020617; --panel: #0f172a; --sidebar: #020617;
+            --primary: #2dd4bf; --accent: #3b82f6; --danger: #f43f5e; --warn: #fbbf24;
+            --text: #f8fafc; --border: #1e293b;
+        }
 
-    // 3. بدء الرحلة العادية
-    db.ref('active_trips').push({ 
-        scooter: scooterId, 
-        startBattery: startBat, 
-        startTime: Date.now(),
-        status: 'active' 
-    });
-}
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; }
+        body { margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-// --- منطق التحديث عند الإنهاء (يُضاف داخل دالة terminateTrip) ---
-function endSecureTrip(scooterId, endBat) {
-    // تحديث "آخر حالة معروفة" للبطارية في قاعدة البيانات
-    db.ref(`scooters_status/${scooterId}`).update({
-        lastBattery: endBat,
-        lastUsed: Date.now()
-    });
-}
+        /* Sidebar Custom */
+        .sidebar { width: 260px; background: var(--sidebar); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 1000; }
+        .brand { padding: 25px; text-align: center; border-bottom: 1px solid var(--border); color: var(--primary); font-family: 'Orbitron'; font-size: 18px; font-weight: 900; letter-spacing: 2px; }
+        .nav-item { padding: 18px 25px; cursor: pointer; color: #64748b; display: flex; align-items: center; gap: 15px; font-weight: 700; }
+        .nav-item:hover, .nav-item.active { background: #0f172a; color: var(--primary); border-right: 4px solid var(--primary); }
 
-// --- وظيفة الجرد المفاجئ (Audit) ---
-async function fleetAudit() {
-    const { value: bat } = await Swal.fire({
-        title: 'جرد البطاريات الآن',
-        input: 'number',
-        inputLabel: 'أدخل بطارية السكوتر S-01 الحالية',
-        // يمكن تكرارها لكل السكوترات
-    });
-    // النظام يقارن ويبحث عن فجوات
-}
+        /* Content Area */
+        .main-content { flex: 1; padding: 20px; display: flex; flex-direction: column; overflow: hidden; background: radial-gradient(circle at 10% 10%, #0f172a, transparent); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .section { display: none; flex: 1; overflow-y: auto; }
+        .section.active { display: block; animation: fadeIn 0.4s ease; }
+
+        /* Cards & KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .kpi-card { background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; position: relative; overflow: hidden; }
+        .kpi-card::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:3px; background:var(--primary); opacity:0.3; }
+        .kpi-val { font-family: 'Orbitron'; font-size: 22px; color: var(--primary); display: block; }
+
+        .scooter-card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 20px; position: relative; margin-bottom: 15px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .live-timer { font-family: 'Orbitron'; font-size: 34px; text-align: center; color: #fff; margin: 10px 0; text-shadow: 0 0 10px var(--primary); }
+        
+        /* Buttons */
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: #000; width: 100%; }
+        .btn-stop { background: var(--danger); color: white; flex: 1; }
+        .btn-pause { background: var(--warn); color: #000; flex: 1; }
+
+        #login-overlay { position: fixed; inset: 0; background: #020617; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Chart Canvas */
+        .chart-container { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 20px; height: 250px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div style="background:var(--panel); padding:40px; border-radius:24px; text-align:center; width:340px; border:1px solid var(--border);">
+            <h1 style="font-family:Orbitron; color:var(--primary)">COMMAND CENTER</h1>
+            <input type="password" id="passInput" style="width:100%; padding:15px; background:#000; border:1px solid var(--border); color:var(--primary); font-size:28px; text-align:center; border-radius:12px; margin-bottom: 20px;" placeholder="****">
+            <button onclick="login()" class="btn btn-primary">AUTHORIZE</button>
+        </div>
+    </div>
+
+    <nav class="sidebar">
+        <div class="brand">YALLA COMMAND</div>
+        <div class="nav-item active" onclick="nav('rental')"><i class="fas fa-satellite-dish"></i> العمليات النشطة</div>
+        <div class="nav-item" onclick="nav('clients')"><i class="fas fa-users-crown"></i> دليل العملاء</div>
+        <div class="nav-item" onclick="nav('maint')"><i class="fas fa-microchip"></i> الصيانة & الشحن</div>
+        <div id="adm-nav" class="nav-item" style="display:none" onclick="nav('admin')"><i class="fas fa-shield-check"></i> مركز القيادة (Admin)</div>
+        <div class="nav-item" style="margin-top:auto; color:var(--danger)" onclick="location.reload()"><i class="fas fa-power-off"></i> خروج</div>
+    </nav>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <h2 id="p-title" style="margin:0">الرقابة اللحظية للأسطول</h2>
+            <div id="clock" style="font-family:Orbitron; color:var(--primary); font-size:18px;">00:00:00</div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card"><span class="kpi-val" id="k-active">0</span><small>نشط الآن</small></div>
+            <div class="kpi-card"><span class="kpi-val" id="k-rev">0</span><small>إيراد اليوم</small></div>
+            <div class="kpi-card"><span class="kpi-val" style="color:var(--accent)" id="k-trips">0</span><small>مهمات مكتملة</small></div>
+            <div class="kpi-card"><span class="kpi-val" style="color:var(--warn)" id="k-eff">0%</span><small>كفاءة البطاريات</small></div>
+        </div>
+
+        <!-- Section: Rental -->
+        <div id="sec-rental" class="section active">
+            <button class="btn btn-primary" onclick="newTripPopup()" style="width:100%; margin-bottom:20px; font-size:18px;">+ بدء مهمة كهربائية جديدة</button>
+            <div id="fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;"></div>
+        </div>
+
+        <!-- Section: Admin (History & Charts) -->
+        <div id="sec-admin" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <input type="date" id="historyDate" onchange="loadHistory(this.value)" style="padding:10px; background:#000; color:white; border:1px solid var(--primary); border-radius:10px;">
+                <button class="btn" style="background:var(--accent); color:white;" onclick="closeShiftReport()">إغلاق الوردية & إرسال تقرير</button>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
+
+            <div style="margin-top:20px;">
+                <table style="width:100%; background:var(--panel); border-radius:10px; overflow:hidden;" border="0" cellpadding="10">
+                    <thead style="background:rgba(0,0,0,0.5)"><tr><th>سكوتر</th><th>العميل</th><th>الزمن</th><th>المبلغ</th><th>الخصم</th><th>الحالة</th></tr></thead>
+                    <tbody id="hist-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section: Clients -->
+        <div id="sec-clients" class="section">
+            <input type="text" placeholder="بحث بالهاتف..." oninput="loadClients(this.value)" style="width:100%; padding:15px; background:#000; color:white; border:1px solid var(--border); border-radius:12px; margin-bottom:20px;">
+            <table style="width:100%; background:var(--panel); border-radius:10px;" cellpadding="12">
+                <thead><tr style="color:var(--text-muted)"><th>الاسم</th><th>الهاتف</th><th>الزيارات</th><th>النقاط</th><th>إجمالي الصرف</th></tr></thead>
+                <tbody id="clients-body"></tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. CONFIG & DATA ---
+        const TELEGRAM = { token: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs", chat: "5684905593" };
+        const SHOP_LOC = { lat: 30.0444, lng: 31.2357 };
+        const PRICING = { min: 40, base_mins: 15, per_min: 2.66 };
+
+        firebase.initializeApp({
+            apiKey: "AIzaSyB2J3KViN4aZYRJ43rYGFtwkmy-jZXBO6c",
+            databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
+            projectId: "yalla-scooter-pro",
+        });
+        const db = firebase.database();
+        let activeCache = {};
+        let revChart;
+
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('ar-EG');
+            updateTimers();
+        }, 1000);
+
+        // --- 2. AUTH & NAV ---
+        function login() {
+            const p = document.getElementById('passInput').value;
+            if(p === "1213" || p === "9924") {
+                if(p === "9924") document.getElementById('adm-nav').style.display = 'flex';
+                document.getElementById('login-overlay').style.display = 'none';
+                initRealtimeSync();
+            } else { Swal.fire('Error', 'Unauthorized Access Code', 'error'); }
+        }
+
+        function nav(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('sec-'+id).classList.add('active');
+            event.currentTarget.classList.add('active');
+            if(id === 'admin') { 
+                const t = new Date().toISOString().split('T')[0]; 
+                document.getElementById('historyDate').value = t; 
+                loadHistory(t);
+                initChart();
+            }
+            if(id === 'clients') loadClients();
+        }
+
+        // --- 3. RENTAL SYSTEM (V13) ---
+        function initRealtimeSync() {
+            db.ref('active_trips').on('value', snap => {
+                const grid = document.getElementById('fleet-grid'); grid.innerHTML = "";
+                activeCache = snap.val() || {};
+                let count = 0;
+                for(let key in activeCache) {
+                    count++; const d = activeCache[key]; const isPaused = d.status === 'paused';
+                    grid.innerHTML += `
+                        <div class="scooter-card ${isPaused ? 'paused' : ''}">
+                            <div style="display:flex; justify-content:space-between">
+                                <b style="color:var(--primary)">${d.scooter}</b>
+                                <small style="color:var(--accent)">⚡ ${d.startBattery}%</small>
+                            </div>
+                            <div class="live-timer" id="timer-${key}">00:00:00</div>
+                            <div style="display:flex; gap:10px;">
+                                ${!isPaused ? `<button class="btn btn-pause" onclick="controlTrip('${key}', 'pause')">وقف</button>` : `<button class="btn btn-primary" onclick="controlTrip('${key}', 'resume')">استئناف</button>`}
+                                <button class="btn btn-stop" onclick="terminateTrip('${key}')">إنهاء</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                document.getElementById('k-active').innerText = count;
+            });
+
+            // Today's KPIs
+            const today = new Date().toISOString().split('T')[0];
+            db.ref(`history/${today}`).on('value', snap => {
+                let r = 0, c = 0; snap.forEach(x => { r += (x.val().final || 0); c++; });
+                document.getElementById('k-rev').innerText = r; document.getElementById('k-trips').innerText = c;
+            });
+        }
+
+        function updateTimers() {
+            const now = Date.now();
+            for(let key in activeCache) {
+                const d = activeCache[key]; const el = document.getElementById(`timer-${key}`); if(!el) continue;
+                let diff = (d.status === 'active') ? (now - d.startTime - (d.pausedDuration || 0)) : (d.pauseStart - d.startTime - (d.pausedDuration || 0));
+                const s = Math.floor(diff / 1000);
+                el.innerText = `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+                if(s > 3600) el.style.color = 'var(--danger)'; // تنبيه لو الرحلة عدت ساعة
+            }
+        }
+
+        async function newTripPopup() {
+            const { value: res } = await Swal.fire({
+                title: 'مهمة كهربائية جديدة',
+                html: '<input id="sw-s" class="swal2-input" placeholder="رقم السكوتر"><input id="sw-b" type="number" class="swal2-input" placeholder="نسبة البطارية %"><input id="sw-n" class="swal2-input" placeholder="اسم العميل">',
+                background: '#0f172a', color: '#fff', confirmButtonColor: '#2dd4bf',
+                preConfirm: () => [document.getElementById('sw-s').value.toUpperCase(), document.getElementById('sw-b').value, document.getElementById('sw-n').value]
+            });
+            if(res && res[0]) {
+                db.ref('active_trips').push({ scooter:res[0], startBattery:res[1]||100, client:res[2]||'زائر', startTime:Date.now(), status:'active', pausedDuration:0 });
+                sendTG(`🛵 ⚡ <b>رحلة بدأت</b>\nسكوتر: ${res[0]}\nبطارية: ${res[1]}%\nالعميل: ${res[2]}`);
+            }
+        }
+
+        async function terminateTrip(key) {
+            const d = activeCache[key];
+            const diff = (d.status==='active'?Date.now():d.pauseStart) - d.startTime - (d.pausedDuration||0);
+            const mins = Math.floor(diff / 60000);
+            
+            let cost = PRICING.min;
+            if(mins > PRICING.base_mins) cost = Math.round(PRICING.min + (mins - PRICING.base_mins) * PRICING.per_min);
+
+            const { value: fin } = await Swal.fire({
+                title: 'إنهاء الرحلة',
+                html: `<h1 style="color:var(--primary); margin:0;">${cost} ج.م</h1><small>المدة: ${mins} دقيقة</small><hr style="border-color:#1e293b"><input id="sw-bat" type="number" class="swal2-input" placeholder="البطارية المتبقية %"><input id="sw-disc" type="number" class="swal2-input" placeholder="مبلغ الخصم"><input id="sw-why" class="swal2-input" placeholder="السبب">`,
+                background:'#0f172a', color:'#fff', showCancelButton:true,
+                preConfirm: () => { return { bat: document.getElementById('sw-bat').value, disc: parseFloat(document.getElementById('sw-disc').value)||0, reason: document.getElementById('sw-why').value } }
+            });
+
+            if(fin) {
+                const final = cost - fin.disc;
+                const today = new Date().toISOString().split('T')[0];
+                const batUsed = d.startBattery - fin.bat;
+                
+                db.ref(`history/${today}`).push({ scooter:d.scooter, client:d.client, mins, cost, disc:fin.disc, final, batUsed, reason:fin.reason });
+                db.ref('active_trips/'+key).remove();
+
+                // مكافأة العميل بنقاط (1 نقطة لكل 20 جنيه)
+                if(d.phone) db.ref(`clients/${d.phone}`).transaction(c => { return { ...c, points: (c?.points || 0) + Math.floor(final/20), totalSpend: (c?.totalSpend||0)+final } });
+
+                let msg = `🏁 <b>انتهت الرحلة</b>\n🛵 ${d.scooter}\n🕒 ${mins} دقيقة\n🔋 استهلاك: ${batUsed}%\n💰 المبلغ: ${cost} ج\n✅ الصافي: ${final} ج`;
+                sendTG(msg);
+                Swal.fire('تم الإنهاء', `المبلغ: ${final} ج`, 'success');
+            }
+        }
+
+        function controlTrip(k, a) {
+            if(a==='pause') db.ref(`active_trips/${k}`).update({ status:'paused', pauseStart:Date.now() });
+            else db.ref(`active_trips/${k}`).once('value', s => { 
+                const d = s.val(); db.ref(`active_trips/${k}`).update({ status:'active', pausedDuration: (d.pausedDuration||0)+(Date.now()-d.pauseStart) }); 
+            });
+        }
+
+        // --- 4. ANALYTICS & ADMIN ---
+        function initChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if(revChart) revChart.destroy();
+            // بيانات تجريبية للأسبوع (يمكنك ربطها بـ Firebase بالكامل لاحقاً)
+            revChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: ['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'], datasets: [{ label: 'الإيراد اليومي', data: [400, 600, 450, 700, 900, 1200, 1500], borderColor: '#2dd4bf', tension: 0.3 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        async function closeShiftReport() {
+            const rev = document.getElementById('k-rev').innerText;
+            const trips = document.getElementById('k-trips').innerText;
+            sendTG(`⚠️ <b>تقرير إغلاق الوردية</b>\n📅 التاريخ: ${new Date().toLocaleDateString()}\n🛵 إجمالي الرحلات: ${trips}\n💰 إجمالي الإيراد: ${rev} ج.م\nتم تقفيل الحساب بنجاح.`);
+            Swal.fire('تم!', 'تم إرسال تقرير الإغلاق للمدير', 'success');
+        }
+
+        function loadHistory(date) {
+            db.ref(`history/${date}`).on('value', snap => {
+                const tb = document.getElementById('hist-body'); tb.innerHTML = "";
+                snap.forEach(c => { const v = c.val(); tb.innerHTML += `<tr><td>${v.scooter}</td><td>${v.client}</td><td>${v.mins}m</td><td>${v.cost}</td><td>${v.disc}</td><td style="color:var(--primary)">${v.final}</td></tr>`; });
+            });
+        }
+
+        function loadClients(q = "") {
+            db.ref('clients').on('value', snap => {
+                const tb = document.getElementById('clients-body'); tb.innerHTML = "";
+                snap.forEach(c => {
+                    if(q && !c.key.includes(q)) return;
+                    const v = c.val();
+                    tb.innerHTML += `<tr><td>${v.name}</td><td>${c.key}</td><td>${v.trips||0}</td><td>${v.points||0}</td><td style="color:var(--primary)">${v.totalSpend||0}</td></tr>`;
+                });
+            });
+        }
+
+        function sendTG(t) { fetch(`https://api.telegram.org/bot${TELEGRAM.token}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ chat_id: TELEGRAM.chat, text: t, parse_mode: 'HTML' }) }); }
+
+    </script>
+</body>
+</html>
