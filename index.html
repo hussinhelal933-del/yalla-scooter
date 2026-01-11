@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Command V27 | Full System</title>
+    <title>Yalla Command V28 | Final Business System</title>
     
     <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script> <!-- Added Storage -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;500;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* نفس التصميم الزجاجي (Glassmorphism) */
+        /* Glassmorphism Theme */
         :root {
             --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             --glass-bg: rgba(17, 25, 40, 0.75);
             --glass-border: rgba(255, 255, 255, 0.125);
             --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             --primary: #00d2ff; --secondary: #928DAB; --accent: #3a7bd5;
-            --danger: #ff0055; --warn: #ffcc00; --text: #ffffff; --text-muted: #a3a3a3;
+            --danger: #ff0055; --warn: #ffcc00; --success: #2ecc71;
+            --text: #ffffff; --text-muted: #a3a3a3;
         }
 
         * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: all 0.3s; outline: none; }
@@ -30,36 +31,37 @@
 
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); }
         
+        /* Sidebar */
         .sidebar { width: 280px; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(20px); border-left: 1px solid var(--glass-border); display: flex; flex-direction: column; z-index: 1000; }
         .brand { padding: 30px 20px; text-align: center; color: var(--primary); font-family: 'Rajdhani'; font-size: 26px; font-weight: 700; text-shadow: 0 0 15px rgba(0,210,255,0.5); border-bottom: 1px solid var(--glass-border); }
         
-        /* Shift Status Widget */
         .shift-widget { padding: 15px; margin: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid var(--glass-border); text-align: center; }
-        .shift-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 5px; }
-        .shift-on { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
-        .shift-off { background: var(--danger); }
-
+        
         .nav-group { flex: 1; padding: 10px; overflow-y: auto; }
         .nav-item { padding: 14px 20px; margin-bottom: 5px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 15px; font-weight: 500; border-radius: 12px; }
         .nav-item:hover, .nav-item.active { background: rgba(0, 210, 255, 0.1); color: var(--primary); }
         .nav-item.active { border-right: 3px solid var(--primary); }
 
+        /* Main Content */
         .main-content { flex: 1; padding: 25px; display: flex; flex-direction: column; overflow: hidden; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--glass-border); }
         
         .section { display: none; flex: 1; overflow-y: auto; padding-bottom: 100px; }
         .section.active { display: block; animation: slideIn 0.4s ease; }
 
-        /* KPI Cards */
+        /* KPI & Cards */
         .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
         .kpi-card { background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); padding: 15px; border-radius: 18px; text-align: center; }
         .kpi-val { font-family: 'Rajdhani'; font-size: 28px; font-weight: 700; color: var(--text); display: block; }
-        
-        /* Unit Card */
+
         .unit-card { background: rgba(20, 20, 30, 0.4); border: 1px solid var(--glass-border); border-radius: 20px; padding: 15px; margin-bottom: 15px; position: relative; }
         .unit-card.paused { border-color: var(--warn); background: rgba(255, 204, 0, 0.05); }
         .unit-timer { font-family: 'Rajdhani'; font-size: 36px; text-align: center; color: var(--primary); margin: 10px 0; font-weight: 700; }
         .id-preview { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--glass-border); filter: brightness(0.8); }
+
+        /* Maintenance & Expense Cards */
+        .maint-card { border: 1px solid var(--danger); background: rgba(255, 0, 85, 0.05); padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .expense-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--glass-border); }
 
         /* Tables & Inputs */
         .glass-table { width: 100%; border-collapse: separate; border-spacing: 0 5px; margin-top: 10px; font-size: 14px; }
@@ -74,15 +76,15 @@
         .btn-primary { background: linear-gradient(45deg, var(--accent), var(--primary)); color: #fff; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2); }
         .btn-danger { background: linear-gradient(45deg, #ff416c, #ff4b2b); color: white; }
         .btn-warn { background: linear-gradient(45deg, #f7971e, #ffd200); color: #000; }
+        .btn-success { background: linear-gradient(45deg, #2ecc71, #00b894); color: white; }
 
         #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <!-- Login Screen -->
+    <!-- Login -->
     <div id="login-overlay">
         <div class="glass-panel" style="padding:40px; border-radius:24px; text-align:center; width:350px;">
             <h1 style="font-family:'Rajdhani'; color:var(--primary); margin:0 0 20px;">YALLA COMMAND</h1>
@@ -95,10 +97,14 @@
     <nav class="sidebar">
         <div class="brand"><i class="fas fa-layer-group"></i> YALLA</div>
         
-        <!-- Shift Status -->
         <div class="shift-widget">
             <div id="shift-status-text" style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">الوردية مغلقة</div>
             <button id="shift-btn" onclick="toggleShift()" class="btn btn-primary" style="width:100%">بدء وردية جديدة</button>
+            <div id="shift-stats" style="margin-top:10px; font-size:12px; display:none; border-top:1px solid #ffffff20; padding-top:5px;">
+                <div style="color:#2ecc71">دخل: <span id="s-inc">0</span></div>
+                <div style="color:#ff416c">خرج: <span id="s-exp">0</span></div>
+                <div style="font-weight:bold; color:white">صافي: <span id="s-net">0</span></div>
+            </div>
         </div>
 
         <div class="nav-group">
@@ -113,22 +119,27 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
+    <!-- Content -->
     <main class="main-content">
         <div class="top-bar">
-            <h2 id="p-title" style="margin:0; font-family:'Rajdhani'; text-transform: uppercase;">لوحة التحكم</h2>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <h2 id="p-title" style="margin:0; font-family:'Rajdhani';">DASHBOARD</h2>
+                <button class="btn btn-danger" onclick="addExpensePopup()" style="padding:5px 15px; font-size:12px;">
+                    <i class="fas fa-money-bill-wave"></i> تسجيل مصروف
+                </button>
+            </div>
             <div id="clock" style="font-family:'Rajdhani'; color:var(--primary); font-size:20px; font-weight:bold;">00:00:00</div>
         </div>
 
         <!-- KPI -->
         <div class="kpi-grid">
             <div class="kpi-card"><span class="kpi-val" id="k-active" style="color:var(--primary)">0</span><small>سكوتر بالخارج</small></div>
-            <div class="kpi-card"><span class="kpi-val" id="k-shift-cash" style="color:#2ecc71">0</span><small>إيراد الوردية</small></div>
-            <div class="kpi-card"><span class="kpi-val" id="k-avail">0</span><small>متاح في المعرض</small></div>
-            <div class="kpi-card"><span class="kpi-val" style="color:var(--danger)" id="k-blocked">0</span><small>عملاء محظورين</small></div>
+            <div class="kpi-card"><span class="kpi-val" id="k-net-cash" style="color:#2ecc71">0</span><small>صافي الدرج</small></div>
+            <div class="kpi-card"><span class="kpi-val" id="k-maint" style="color:var(--warn)">0</span><small>في الصيانة</small></div>
+            <div class="kpi-card"><span class="kpi-val" id="k-avail">0</span><small>متاح للعمل</small></div>
         </div>
 
-        <!-- 1. Operations Section -->
+        <!-- 1. Operations -->
         <div id="sec-ops" class="section active">
             <button class="btn btn-primary" onclick="startTripPopup()" style="width:100%; margin-bottom:20px; padding:15px; font-size:16px;">
                 <i class="fas fa-plus-circle"></i> بدء رحلة جديدة
@@ -136,61 +147,67 @@
             <div id="fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;"></div>
         </div>
 
-        <!-- 2. Clients Section -->
+        <!-- 2. Clients -->
         <div id="sec-clients" class="section">
             <input type="text" placeholder="بحث بالهاتف..." oninput="loadClients(this.value)">
             <table class="glass-table">
-                <thead><tr><th>العميل</th><th>الهاتف</th><th>النقاط</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead>
+                <thead><tr><th>العميل</th><th>الهاتف</th><th>النقاط</th><th>الحالة</th><th></th></tr></thead>
                 <tbody id="clients-list"></tbody>
             </table>
         </div>
 
-        <!-- 3. Admin Section -->
+        <!-- 3. Maintenance (New Feature) -->
+        <div id="sec-maint" class="section">
+            <div style="display:flex; gap:20px;">
+                <div style="flex:1">
+                    <h3 style="color:var(--text-muted)">المعدات في الصيانة (معطلة)</h3>
+                    <div id="maint-list"></div>
+                </div>
+                <div style="flex:1">
+                    <h3 style="color:var(--primary)">تسجيل عطل جديد</h3>
+                    <div class="glass-panel" style="padding:20px; border-radius:15px;">
+                        <select id="maint-select-scooter"><option>تحميل...</option></select>
+                        <textarea id="maint-reason" rows="3" placeholder="وصف العطل (فرامل، كاوتش، كهرباء...)" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid #444; color:white; border-radius:10px; padding:10px;"></textarea>
+                        <button class="btn btn-danger" onclick="sendToMaint()" style="width:100%">تحويل للصيانة (إيقاف)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Admin -->
         <div id="sec-admin" class="section">
             <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:15px; margin-bottom:20px;">
                 <canvas id="revChart" height="200"></canvas>
             </div>
-            <h3>سجل الورديات المقفلة</h3>
+            <h3>سجل الورديات</h3>
             <table class="glass-table">
-                <thead><tr><th>الموظف</th><th>بدأت</th><th>انتهت</th><th>الإيراد</th><th>رحلات</th></tr></thead>
+                <thead><tr><th>الموظف</th><th>بدأت</th><th>انتهت</th><th>الإيراد</th><th>المصروف</th><th>الصافي</th></tr></thead>
                 <tbody id="shifts-list"></tbody>
             </table>
         </div>
 
-        <!-- 4. Settings Section (New) -->
+        <!-- 5. Settings -->
         <div id="sec-settings" class="section">
             <div class="kpi-card" style="text-align:right; margin-bottom:20px;">
-                <h3 style="margin-top:0; color:var(--primary)">💰 إعدادات الأسعار</h3>
-                <label>سعر فتح العداد (جنيه)</label>
-                <input type="number" id="conf-baseCost" onchange="saveConfig()">
-                <label>عدد الدقائق في الفتح (مثلاً 15 دقيقة)</label>
-                <input type="number" id="conf-baseMins" onchange="saveConfig()">
-                <label>سعر الدقيقة الإضافية</label>
-                <input type="number" id="conf-pricePerMin" onchange="saveConfig()">
+                <h3 style="margin-top:0; color:var(--primary)">💰 الأسعار</h3>
+                <label>فتح العداد</label><input type="number" id="conf-baseCost" onchange="saveConfig()">
+                <label>دقائق الفتح</label><input type="number" id="conf-baseMins" onchange="saveConfig()">
+                <label>سعر الدقيقة</label><input type="number" id="conf-pricePerMin" onchange="saveConfig()">
             </div>
-
             <div class="kpi-card" style="text-align:right;">
-                <h3 style="margin-top:0; color:var(--primary)">🛵 إدارة الأسطول (Inventory)</h3>
+                <h3 style="margin-top:0; color:var(--primary)">🛵 المخزن (إضافة سكوتر)</h3>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="new-scooter-name" placeholder="اسم السكوتر (مثلاً S5)">
+                    <input type="text" id="new-scooter-name" placeholder="الاسم (S1, S2...)">
                     <button class="btn btn-primary" onclick="addNewScooter()">إضافة</button>
                 </div>
-                <div id="scooter-mngt-list" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:10px;"></div>
-            </div>
-        </div>
-
-        <!-- Maint Placeholder -->
-        <div id="sec-maint" class="section">
-             <div style="text-align:center; padding:50px;">
-                <i class="fas fa-wrench" style="font-size:40px; color:var(--text-muted)"></i>
-                <p>قائمة السكوترات في الصيانة ستظهر هنا</p>
+                <div id="scooter-mngt-list" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
             </div>
         </div>
 
     </main>
 
     <script>
-        // --- CONFIG & INIT ---
+        // --- SYSTEM CONFIG ---
         const TELEGRAM = { token: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs", chat: "5684905593" };
         
         firebase.initializeApp({
@@ -198,19 +215,20 @@
             authDomain: "yalla-scooter-pro.firebaseapp.com",
             databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
             projectId: "yalla-scooter-pro",
-            storageBucket: "yalla-scooter-pro.appspot.com", // تأكد من تفعيل Storage في الكونسول
+            storageBucket: "yalla-scooter-pro.appspot.com",
         });
 
         const db = firebase.database();
         const storage = firebase.storage();
         
         let activeTrips = {};
-        let config = { baseCost: 40, baseMins: 15, pricePerMin: 2.66 }; // Default values
+        let config = { baseCost: 40, baseMins: 15, pricePerMin: 2.66 };
         let currentShiftId = null;
         let currentUser = "Admin"; 
         let availableScooters = [];
+        let shiftData = { cash: 0, expenses: 0 };
 
-        // --- AUTH & SYSTEM ---
+        // --- AUTH & LOAD ---
         function login() {
             const p = document.getElementById('passInput').value;
             if(p === "1213" || p === "9924") {
@@ -225,7 +243,7 @@
         }
 
         function initSystem() {
-            // Load Config
+            // Load Settings
             db.ref('settings').on('value', s => { 
                 if(s.exists()) config = s.val();
                 document.getElementById('conf-baseCost').value = config.baseCost;
@@ -233,47 +251,74 @@
                 document.getElementById('conf-pricePerMin').value = config.pricePerMin;
             });
 
-            // Load Shift Status
-            const today = new Date().toISOString().split('T')[0];
+            // Load Shift
             db.ref('shifts/current').on('value', s => {
                 const btn = document.getElementById('shift-btn');
                 const txt = document.getElementById('shift-status-text');
-                const kpi = document.getElementById('k-shift-cash');
+                const stats = document.getElementById('shift-stats');
                 
                 if(s.exists() && s.val().status === 'open') {
+                    const v = s.val();
                     currentShiftId = s.key;
-                    btn.innerText = "إغلاق الوردية (تسليم)";
+                    shiftData = { cash: v.totalCash || 0, expenses: v.totalExpenses || 0 };
+                    
+                    btn.innerText = "تسليم الوردية (إغلاق)";
                     btn.classList.replace('btn-primary', 'btn-danger');
-                    txt.innerText = `الوردية مفتوحة: ${s.val().user}`;
+                    txt.innerText = `وردية: ${v.user} (منذ ${new Date(v.start).toLocaleTimeString()})`;
                     txt.style.color = "#2ecc71";
-                    kpi.innerText = s.val().totalCash + " ج";
+                    
+                    stats.style.display = "block";
+                    document.getElementById('s-inc').innerText = shiftData.cash;
+                    document.getElementById('s-exp').innerText = shiftData.expenses;
+                    document.getElementById('s-net').innerText = (shiftData.cash - shiftData.expenses) + " ج";
+                    document.getElementById('k-net-cash').innerText = (shiftData.cash - shiftData.expenses);
                 } else {
                     currentShiftId = null;
                     btn.innerText = "بدء وردية جديدة";
                     btn.classList.replace('btn-danger', 'btn-primary');
                     txt.innerText = "الوردية مغلقة";
                     txt.style.color = "var(--text-muted)";
-                    kpi.innerText = "0";
+                    stats.style.display = "none";
+                    document.getElementById('k-net-cash').innerText = "0";
                 }
             });
 
-            // Load Inventory (Available Scooters)
+            // Load Inventory for Maint & Start
             db.ref('inventory').on('value', snap => {
                 availableScooters = [];
                 const list = document.getElementById('scooter-mngt-list');
-                list.innerHTML = '';
-                let availCount = 0;
+                const maintSelect = document.getElementById('maint-select-scooter');
+                const maintList = document.getElementById('maint-list');
+                
+                list.innerHTML = ''; maintSelect.innerHTML = '<option value="">اختر سكوتر...</option>'; maintList.innerHTML = '';
+                let availC = 0, maintC = 0;
                 
                 snap.forEach(doc => {
                     const s = doc.val();
+                    const key = doc.key;
+                    
+                    // Admin List
+                    list.innerHTML += `<div style="padding:5px 10px; background:rgba(255,255,255,0.1); border-radius:5px;">${key} (${s.status})</div>`;
+
                     if(s.status === 'available') {
-                        availableScooters.push(doc.key);
-                        availCount++;
+                        availableScooters.push(key);
+                        maintSelect.innerHTML += `<option value="${key}">${key}</option>`;
+                        availC++;
+                    } else if (s.status === 'maintenance') {
+                        maintC++;
+                        maintList.innerHTML += `
+                            <div class="maint-card">
+                                <div>
+                                    <h3 style="margin:0; color:white">${key}</h3>
+                                    <small style="color:var(--text-muted)">${s.issue || 'غير محدد'}</small>
+                                </div>
+                                <button class="btn btn-success" onclick="restoreScooter('${key}')">إصلاح</button>
+                            </div>
+                        `;
                     }
-                    // For Settings List
-                    list.innerHTML += `<div style="padding:5px 10px; background:rgba(255,255,255,0.1); border-radius:5px;">${doc.key} (${s.status})</div>`;
                 });
-                document.getElementById('k-avail').innerText = availCount;
+                document.getElementById('k-avail').innerText = availC;
+                document.getElementById('k-maint').innerText = maintC;
             });
 
             // Load Trips
@@ -282,7 +327,7 @@
                 renderTrips();
             });
 
-            // Admin Charts
+            // Admin Logs
             loadAdminData();
         }
 
@@ -293,37 +338,87 @@
             event.currentTarget.classList.add('active');
         }
 
-        // --- 1. SHIFT SYSTEM ---
+        // --- 1. SHIFTS & EXPENSES ---
         function toggleShift() {
             if(!currentShiftId) {
-                // Start Shift
                 db.ref('shifts/current').set({
-                    user: currentUser,
-                    start: Date.now(),
-                    status: 'open',
-                    totalCash: 0,
-                    tripsCount: 0
+                    user: currentUser, start: Date.now(), status: 'open',
+                    totalCash: 0, totalExpenses: 0, tripsCount: 0
                 });
-                Swal.fire('تم', 'تم فتح الوردية بنجاح', 'success');
+                Swal.fire('تم', 'تم فتح الوردية', 'success');
             } else {
-                // End Shift
                 db.ref('shifts/current').once('value', s => {
-                    const data = s.val();
-                    const summary = {
-                        ...data,
-                        end: Date.now(),
-                        status: 'closed'
-                    };
-                    // Save to history
+                    const v = s.val();
+                    const net = (v.totalCash||0) - (v.totalExpenses||0);
+                    const summary = { ...v, end: Date.now(), status: 'closed', netCash: net };
+                    
                     db.ref('shifts/history').push(summary);
-                    // Clear current
                     db.ref('shifts/current').remove();
-                    Swal.fire('تقرير الوردية', `الإيراد: ${data.totalCash} ج | الرحلات: ${data.tripsCount}`, 'info');
+                    
+                    Swal.fire({
+                        title: 'تقرير الوردية',
+                        html: `
+                            <div style="text-align:right">
+                                <p>الإيراد: ${v.totalCash} ج</p>
+                                <p style="color:red">المصروفات: ${v.totalExpenses} ج</p>
+                                <hr>
+                                <h2 style="color:#2ecc71; text-align:center">الصافي: ${net} ج</h2>
+                            </div>
+                        `,
+                        icon: 'info'
+                    });
                 });
             }
         }
 
-        // --- 2. SETTINGS & INVENTORY ---
+        async function addExpensePopup() {
+            if(!currentShiftId) return Swal.fire('خطأ', 'افتح الوردية أولاً', 'error');
+            const { value: form } = await Swal.fire({
+                title: 'تسجيل مصروف',
+                html: `
+                    <input id="ex-amount" type="number" class="swal2-input" placeholder="المبلغ">
+                    <input id="ex-desc" class="swal2-input" placeholder="السبب (شاي، صيانة..)">
+                `,
+                customClass: { popup: 'glass-panel' }, background: 'transparent',
+                preConfirm: () => { return [document.getElementById('ex-amount').value, document.getElementById('ex-desc').value] }
+            });
+
+            if(form && form[0]) {
+                const amount = parseFloat(form[0]);
+                const desc = form[1];
+                
+                // Add to expenses log
+                db.ref(`expenses/${new Date().toISOString().split('T')[0]}`).push({
+                    amount, desc, time: Date.now(), user: currentUser, shiftId: currentShiftId
+                });
+                
+                // Update Shift total
+                db.ref('shifts/current').transaction(s => {
+                    if(s) s.totalExpenses = (s.totalExpenses || 0) + amount;
+                    return s;
+                });
+                
+                Swal.fire('تم', `تم خصم ${amount} ج`, 'success');
+            }
+        }
+
+        // --- 2. MAINTENANCE ---
+        function sendToMaint() {
+            const sc = document.getElementById('maint-select-scooter').value;
+            const issue = document.getElementById('maint-reason').value;
+            if(!sc || !issue) return Swal.fire('ناقص بيانات', 'اختر سكوتر واكتب السبب', 'warning');
+            
+            db.ref('inventory/'+sc).update({ status: 'maintenance', issue: issue, issueTime: Date.now() });
+            Swal.fire('تم', `تم تحويل ${sc} للصيانة`, 'success');
+            document.getElementById('maint-reason').value = "";
+        }
+
+        function restoreScooter(sc) {
+            db.ref('inventory/'+sc).update({ status: 'available', issue: null, issueTime: null });
+            Swal.fire('تم', `عاد ${sc} للعمل`, 'success');
+        }
+
+        // --- 3. TRIP LOGIC ---
         function saveConfig() {
             const newConf = {
                 baseCost: parseFloat(document.getElementById('conf-baseCost').value),
@@ -331,7 +426,6 @@
                 pricePerMin: parseFloat(document.getElementById('conf-pricePerMin').value)
             };
             db.ref('settings').set(newConf);
-            Swal.fire('تم', 'تم تحديث الأسعار', 'success');
         }
 
         function addNewScooter() {
@@ -341,31 +435,27 @@
             document.getElementById('new-scooter-name').value = '';
         }
 
-        // --- 3. TRIP LOGIC (Enhanced with Select & Storage) ---
         async function startTripPopup() {
             if(!currentShiftId) return Swal.fire('تنبيه', 'يجب فتح الوردية أولاً!', 'warning');
-            
-            // Build Options
             let options = availableScooters.map(s => `<option value="${s}">${s}</option>`).join('');
             if(availableScooters.length === 0) options = `<option disabled>لا يوجد سكوتر متاح</option>`;
 
             const { value: res } = await Swal.fire({
-                title: 'بيانات الرحلة',
+                title: 'بدء رحلة',
                 html: `
                     <select id="sw-s" class="swal2-input">${options}</select>
-                    <input id="sw-ph" class="swal2-input" placeholder="رقم هاتف العميل">
+                    <input id="sw-ph" class="swal2-input" placeholder="رقم العميل">
                     <input id="sw-n" class="swal2-input" placeholder="اسم العميل">
-                    <input id="sw-b" type="number" class="swal2-input" placeholder="نسبة البطارية %">
-                    <p style="font-size:12px; margin-top:10px;">صورة البطاقة (Upload)</p>
+                    <input id="sw-b" type="number" class="swal2-input" placeholder="البطارية %">
+                    <p style="font-size:12px; margin-top:10px">صورة البطاقة</p>
                     <input id="sw-img" type="file" accept="image/*" class="swal2-file">
                 `,
-                customClass: { popup: 'glass-panel' },
-                background: 'transparent',
+                customClass: { popup: 'glass-panel' }, background: 'transparent',
                 preConfirm: () => {
                     const img = document.getElementById('sw-img').files[0];
                     const sc = document.getElementById('sw-s').value;
-                    if(!img) return Swal.showValidationMessage('الصورة مطلوبة!');
-                    if(!sc) return Swal.showValidationMessage('اختر سكوتر!');
+                    if(!img) return Swal.showValidationMessage('الصورة مطلوبة');
+                    if(!sc) return Swal.showValidationMessage('اختر سكوتر');
                     return [document.getElementById('sw-ph').value, sc, document.getElementById('sw-b').value, document.getElementById('sw-n').value, img];
                 }
             });
@@ -373,23 +463,16 @@
             if(res) {
                 Swal.fire({ title: 'جاري الرفع...', didOpen: () => Swal.showLoading() });
                 const [ph, s, bat, name, file] = res;
-                
-                // 1. Upload Image to Firebase Storage
                 const ref = storage.ref(`ids/${Date.now()}_${ph}`);
                 const snapshot = await ref.put(file);
                 const url = await snapshot.ref.getDownloadURL();
 
-                // 2. Create Trip
-                const tripData = {
+                db.ref('active_trips').push({
                     phone: ph, scooter: s, startBat: bat, client: name||'زائر',
-                    idPhoto: url, // URL link, not Base64!
-                    startTime: Date.now(), status: 'active', pausedDuration: 0,
+                    idPhoto: url, startTime: Date.now(), status: 'active', pausedDuration: 0,
                     shiftId: currentShiftId
-                };
-                
-                db.ref('active_trips').push(tripData);
-                db.ref('inventory/'+s).update({ status: 'active' }); // Mark as busy
-                
+                });
+                db.ref('inventory/'+s).update({ status: 'active' });
                 Swal.close();
                 sendTG(`🚀 <b>رحلة جديدة</b>\nسكوتر: ${s}\nالعميل: ${name}`);
             }
@@ -400,67 +483,49 @@
             const diff = (d.status==='active'?Date.now():d.pauseStart) - d.startTime - (d.pausedDuration||0);
             const mins = Math.floor(diff / 60000);
             
-            // Dynamic Pricing Calculation
             let cost = config.baseCost;
-            if (mins > config.baseMins) {
-                cost += (mins - config.baseMins) * config.pricePerMin;
-            }
+            if (mins > config.baseMins) cost += (mins - config.baseMins) * config.pricePerMin;
             cost = Math.round(cost);
 
             const { value: fin } = await Swal.fire({
-                title: 'إنهاء وحساب',
+                title: 'إنهاء الحساب',
                 html: `
                     <h1 style="color:var(--primary); font-size:50px;">${cost} ج</h1>
-                    <p>المدة: ${mins} دقيقة</p>
-                    <input id="sw-disc" type="number" class="swal2-input" placeholder="خصم (اختياري)">
+                    <p>${mins} دقيقة</p>
+                    <input id="sw-disc" type="number" class="swal2-input" placeholder="خصم">
                     <input id="sw-bat" type="number" class="swal2-input" placeholder="البطارية الحالية %">
                 `,
-                customClass: { popup: 'glass-panel' },
-                background: 'transparent',
-                preConfirm: () => { 
-                    return { 
-                        disc: parseFloat(document.getElementById('sw-disc').value)||0,
-                        bat: document.getElementById('sw-bat').value 
-                    } 
-                }
+                customClass: { popup: 'glass-panel' }, background: 'transparent',
+                preConfirm: () => { return { disc: parseFloat(document.getElementById('sw-disc').value)||0, bat: document.getElementById('sw-bat').value } }
             });
 
             if(fin) {
                 const final = cost - fin.disc;
                 const today = new Date().toISOString().split('T')[0];
 
-                // Update Shift
                 if(currentShiftId) {
                     db.ref('shifts/current').transaction(s => {
-                        if(s) { s.totalCash += final; s.tripsCount += 1; }
+                        if(s) { s.totalCash = (s.totalCash||0) + final; s.tripsCount = (s.tripsCount||0) + 1; }
                         return s;
                     });
                 }
-
-                // Archive
+                
                 db.ref(`history/${today}`).push({ scooter:d.scooter, client:d.client, mins, final, endBat: fin.bat });
-                
-                // Free Scooter
                 db.ref('inventory/'+d.scooter).update({ status: 'available' });
-                
-                // Remove Trip
                 db.ref('active_trips/'+key).remove();
                 sendTG(`🏁 <b>انتهاء رحلة</b>\n🛵 ${d.scooter}\n💰 ${final} ج`);
             }
         }
 
-        // --- RENDER FUNCTIONS ---
+        // --- RENDER HELPERS ---
         function renderTrips() {
-            const grid = document.getElementById('fleet-grid'); 
-            grid.innerHTML = "";
+            const grid = document.getElementById('fleet-grid'); grid.innerHTML = "";
             let count = 0;
             for(let k in activeTrips) {
                 count++; const d = activeTrips[k];
                 grid.innerHTML += `
                     <div class="unit-card ${d.status==='paused'?'paused':''}">
-                        <div style="display:flex; justify-content:space-between; color:white;">
-                            <b>${d.scooter}</b> <span>${d.client}</span>
-                        </div>
+                        <div style="display:flex; justify-content:space-between; color:white;"><b>${d.scooter}</b> <span>${d.client}</span></div>
                         <img src="${d.idPhoto}" class="id-preview">
                         <div class="unit-timer" id="timer-${k}">00:00:00</div>
                         <div style="display:flex; gap:10px;">
@@ -490,14 +555,14 @@
                 el.innerText = `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
             }
         }
+        setInterval(refreshTimers, 1000);
 
         function loadClients(q) {
             db.ref('clients').on('value', snap => {
                 const tb = document.getElementById('clients-list'); tb.innerHTML='';
                 snap.forEach(c => {
-                    const v = c.val();
-                    if(q && !c.key.includes(q)) return;
-                    tb.innerHTML += `<tr><td>${v.name||'زائر'}</td><td>${c.key}</td><td>${v.points||0}</td><td>${v.totalSpend||0}</td><td>${v.blocked?'محظور':'نشط'}</td><td></td></tr>`;
+                    const v = c.val(); if(q && !c.key.includes(q)) return;
+                    tb.innerHTML += `<tr><td>${v.name||'زائر'}</td><td>${c.key}</td><td>${v.points||0}</td><td>${v.blocked?'<span style="color:red">محظور</span>':'نشط'}</td><td></td></tr>`;
                 });
             });
         }
@@ -507,8 +572,7 @@
                 const tb = document.getElementById('shifts-list'); tb.innerHTML='';
                 snap.forEach(s => {
                     const v = s.val();
-                    const date = new Date(v.start).toLocaleDateString();
-                    tb.innerHTML += `<tr><td>${v.user}</td><td>${new Date(v.start).toLocaleTimeString()}</td><td>${new Date(v.end).toLocaleTimeString()}</td><td style="color:#2ecc71">${v.totalCash} ج</td><td>${v.tripsCount}</td></tr>`;
+                    tb.innerHTML += `<tr><td>${v.user}</td><td>${new Date(v.start).toLocaleTimeString()}</td><td>${new Date(v.end).toLocaleTimeString()}</td><td style="color:#2ecc71">${v.totalCash}</td><td style="color:#ff416c">${v.totalExpenses||0}</td><td style="font-weight:bold">${v.netCash||0}</td></tr>`;
                 });
             });
         }
