@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Command V41 | Full Premium Edition</title>
+    <title>Yalla Command V43 | Full Security</title>
     
-    <!-- Scripts & Styles (نفس مكتباتك الأصلية) -->
+    <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
@@ -14,104 +14,81 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- التصميم الفخم الموحد --- */
         :root {
-            --bg: #000; --sidebar-bg: #050505; --glass: rgba(15, 20, 35, 0.95);
+            --bg: #000; --sidebar: #050505; --glass: rgba(15, 20, 35, 0.95);
             --primary: #00d2ff; --accent: #0072ff; --danger: #ff0055;
             --success: #00ff9d; --warn: #ffcc00; --border: rgba(0, 210, 255, 0.2);
-            --text-muted: #8892b0;
         }
 
         * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; }
         body { margin: 0; background: var(--bg); color: #fff; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar */
-        .sidebar { width: 280px; background: var(--sidebar-bg); border-left: 1px solid #222; display: flex; flex-direction: column; z-index: 1000; overflow-y: auto; }
+        .sidebar { width: 280px; background: var(--sidebar); border-left: 1px solid #222; display: flex; flex-direction: column; z-index: 1000; overflow-y: auto; }
         .brand { padding: 30px 20px; text-align: center; color: var(--primary); font-family: 'Rajdhani'; font-size: 28px; font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 15px rgba(0,210,255,0.4); border-bottom: 1px solid #222; }
         
-        .attendance-widget { padding: 15px; margin: 15px; background: rgba(0, 210, 255, 0.05); border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        .nav-item { padding: 15px 20px; margin: 5px 15px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 15px; font-weight: 600; border-radius: 12px; }
-        .nav-item:hover, .nav-item.active { background: linear-gradient(90deg, rgba(0,210,255,0.1), transparent); color: var(--primary); border-right: 3px solid var(--primary); }
+        .attendance-box { padding: 15px; margin: 15px; background: rgba(0, 210, 255, 0.05); border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .nav-item { padding: 15px 20px; margin: 5px 15px; cursor: pointer; color: #666; display: flex; align-items: center; gap: 15px; font-weight: 600; border-radius: 12px; }
+        .nav-item:hover, .nav-item.active { background: linear-gradient(90deg, rgba(0,210,255,0.1), transparent); color: var(--primary); border-right: 4px solid var(--primary); }
 
-        /* Main */
         .main-content { flex: 1; padding: 25px; display: flex; flex-direction: column; overflow-y: auto; background: radial-gradient(circle at top left, #0a1020, #000); }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #222; padding-bottom: 15px; }
 
-        /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
         .kpi-card { background: var(--glass); border: 1px solid var(--border); padding: 20px; border-radius: 20px; text-align: center; }
         .kpi-val { font-family: 'Rajdhani'; font-size: 32px; font-weight: 700; color: #fff; display: block; }
 
-        /* Unit Cards */
-        .unit-card { background: var(--glass); border: 1px solid var(--border); border-radius: 24px; padding: 15px; position: relative; transition: 0.3s; }
-        .unit-card.overtime { border: 2px solid var(--danger); animation: pulse-red 1.5s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 5px var(--danger); } 50% { box-shadow: 0 0 20px var(--danger); } 100% { box-shadow: 0 0 5px var(--danger); } }
+        .unit-card { background: var(--glass); border: 1px solid var(--border); border-radius: 24px; padding: 15px; position: relative; }
         .unit-timer { font-family: 'Rajdhani'; font-size: 40px; text-align: center; color: var(--primary); margin: 10px 0; font-weight: 700; text-shadow: 0 0 10px rgba(0,210,255,0.3); }
 
-        /* Form Elements */
         .btn { padding: 12px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; width: 100%; margin-bottom: 8px; }
         .btn-primary { background: linear-gradient(90deg, var(--accent), var(--primary)); color: #fff; }
         .btn-danger { background: rgba(255,0,85,0.1); border: 1px solid var(--danger); color: var(--danger); }
+        
         input, select, textarea { background: #111 !important; border: 1px solid #333 !important; color: #fff !important; border-radius: 12px !important; padding: 12px !important; width: 100%; margin-bottom: 10px; }
-
-        .glass-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-        .glass-table td { background: rgba(255,255,255,0.02); padding: 15px; color: #fff; }
-        .glass-table tr td:first-child { border-radius: 0 15px 15px 0; border-right: 3px solid var(--primary); }
-
+        .debt-tag { background: var(--danger); color: white; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; margin-top: 5px; display: block; text-align: center; }
+        
         #login-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .section { display: none; }
-        .section.active { display: block; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .debt-tag { background: var(--danger); color: white; padding: 5px; border-radius: 8px; font-size: 12px; font-weight: bold; margin-top: 5px; display: block; text-align: center; }
+        .section.active { display: block; }
     </style>
 </head>
 <body>
 
-    <!-- شاشة الدخول -->
     <div id="login-overlay">
         <div style="background:var(--glass); padding:50px; border-radius:30px; text-align:center; width:380px; border:1px solid var(--border);">
-            <h1 style="font-family:'Rajdhani'; color:var(--primary);">YALLA COMMAND</h1>
+            <h1 style="font-family:'Rajdhani'; color:var(--primary); margin:0 0 10px;">YALLA COMMAND</h1>
             <input type="password" id="passInput" style="text-align:center; font-size:24px; letter-spacing:5px;" placeholder="****">
-            <button onclick="login()" class="btn btn-primary" style="margin-top:20px; padding:15px;">دخول النظام</button>
+            <button onclick="login()" class="btn btn-primary" style="margin-top:20px;">دخول</button>
         </div>
     </div>
 
-    <!-- القائمة الجانبية -->
     <nav class="sidebar">
         <div class="brand">YALLA</div>
-        
-        <div class="attendance-widget">
-            <div style="font-size:11px; color:var(--primary); margin-bottom:8px; font-weight:bold;">نظام الحضور</div>
+        <div class="attendance-box">
             <div style="display:flex; gap:10px;">
-                <button class="btn btn-primary" style="padding:5px;" onclick="recordAttendance('in')"><i class="fas fa-sign-in-alt"></i></button>
-                <button class="btn btn-danger" style="padding:5px;" onclick="recordAttendance('out')"><i class="fas fa-sign-out-alt"></i></button>
+                <button class="btn btn-primary" style="padding:5px;" onclick="recordAttendance('in')">حضور</button>
+                <button class="btn btn-danger" style="padding:5px;" onclick="recordAttendance('out')">انصراف</button>
             </div>
         </div>
-
         <div class="nav-group" style="flex:1">
-            <div class="nav-item active" onclick="nav('ops')"><i class="fas fa-rocket"></i> <span>الرحلات</span></div>
-            <div class="nav-item" onclick="nav('clients')"><i class="fas fa-users"></i> <span>العملاء</span></div>
-            <div class="nav-item" onclick="nav('maint')"><i class="fas fa-tools"></i> <span>الأعطال</span></div>
-            <div id="adm-nav" class="nav-item" style="display:none" onclick="nav('admin')"><i class="fas fa-chart-line"></i> <span>الإدارة المالية</span></div>
-            <div id="set-nav" class="nav-item" style="display:none" onclick="nav('settings')"><i class="fas fa-sliders-h"></i> <span>الإعدادات</span></div>
+            <div class="nav-item active" onclick="nav('ops')"><i class="fas fa-rocket"></i> الرحلات</div>
+            <div class="nav-item" onclick="nav('clients')"><i class="fas fa-users"></i> العملاء</div>
+            <div class="nav-item" onclick="nav('maint')"><i class="fas fa-tools"></i> الصيانة</div>
+            <div id="adm-nav" class="nav-item" style="display:none" onclick="nav('admin')"><i class="fas fa-chart-line"></i> المالية</div>
+            <div id="set-nav" class="nav-item" style="display:none" onclick="nav('settings')"><i class="fas fa-sliders-h"></i> الإعدادات</div>
         </div>
-
-        <div style="margin-top:auto; padding:20px; border-top:1px solid #222;">
-            <div id="shift-status-text" style="text-align:center; font-size:12px; margin-bottom:8px; color:var(--text-muted)">الوردية مغلقة</div>
+        <div style="padding:20px;">
+            <div id="shift-status-text" style="font-size:12px; color:#666; text-align:center; margin-bottom:10px;">الوردية مغلقة</div>
             <button id="shift-btn" onclick="toggleShift()" class="btn btn-primary">فتح وردية</button>
-            <button class="btn btn-danger" onclick="addExpensePopup()" style="margin-top:10px;">تسجيل مصروف</button>
         </div>
     </nav>
 
-    <!-- المحتوى الرئيسي -->
     <main class="main-content">
         <div class="top-bar">
-            <h2 id="p-title" style="font-family:'Rajdhani'; text-transform:uppercase;">Operations</h2>
+            <h2 id="p-title" style="font-family:'Rajdhani';">OPERATIONS</h2>
             <div id="clock" style="font-family:'Rajdhani'; color:var(--primary); font-size:22px; font-weight:900;">00:00:00</div>
         </div>
 
-        <!-- KPIs -->
         <div class="kpi-grid">
             <div class="kpi-card"><span class="kpi-val" id="k-active" style="color:var(--primary)">0</span><small>بالخارج</small></div>
             <div class="kpi-card"><span class="kpi-val" id="k-net-cash" style="color:var(--success)">0</span><small>صافي الدرج</small></div>
@@ -119,256 +96,180 @@
             <div class="kpi-card"><span class="kpi-val" id="k-avail">0</span><small>متاح</small></div>
         </div>
 
-        <!-- Sections -->
         <div id="sec-ops" class="section active">
-            <button class="btn btn-primary" onclick="startTripPopup()" style="padding:20px; font-size:18px; margin-bottom:30px;">+ بدء رحلة جديدة</button>
-            <div id="fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:25px;"></div>
+            <button class="btn btn-primary" onclick="startTripPopup()" style="padding:20px; font-size:18px;">+ بدء رحلة</button>
+            <div id="fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:25px; margin-top:20px;"></div>
         </div>
 
         <div id="sec-clients" class="section">
-            <input type="text" placeholder="🔍 بحث عن عميل..." oninput="loadClients(this.value)">
-            <table class="glass-table">
-                <thead><tr><th>العميل</th><th>الهاتف</th><th>النقاط</th><th>المديونية</th><th>الحالة</th></tr></thead>
+            <input type="text" placeholder="🔍 بحث بالرقم..." oninput="loadClients(this.value)">
+            <table class="glass-table" id="clients-list-table">
+                <thead><tr><th>العميل</th><th>الهاتف</th><th>المديونية</th><th>الحالة</th></tr></thead>
                 <tbody id="clients-list"></tbody>
             </table>
         </div>
 
-        <div id="sec-maint" class="section">
-            <div style="display:flex; gap:30px;">
-                <div style="flex:1"><h3>🔴 الأعطال الحالية</h3><div id="maint-list"></div></div>
-                <div style="flex:1"><h3>🔧 إبلاغ جديد</h3>
-                    <select id="maint-select-scooter"><option>تحميل...</option></select>
-                    <textarea id="maint-reason" rows="4" placeholder="سبب العطل..."></textarea>
-                    <button class="btn btn-danger" onclick="sendToMaint()">تسجيل العطل</button>
-                </div>
-            </div>
-        </div>
-
         <div id="sec-admin" class="section">
-            <div style="display:flex; gap:15px; margin-bottom:30px;">
-                <input type="date" id="admin-date-picker" onchange="loadDailyStats(this.value)" style="margin:0">
-                <button class="btn btn-primary" style="width:150px; margin:0" onclick="loadDailyStats(document.getElementById('admin-date-picker').value)">عرض</button>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="date" id="admin-date-picker" onchange="loadDailyStats(this.value)">
+                <button class="btn btn-primary" onclick="loadDailyStats(document.getElementById('admin-date-picker').value)">عرض</button>
             </div>
             <div class="kpi-grid">
-                <div class="kpi-card" style="border-bottom:3px solid var(--success);"><h3>الإيرادات</h3><span id="day-rev" class="kpi-val">0</span></div>
-                <div class="kpi-card" style="border-bottom:3px solid var(--danger);"><h3>المصروفات</h3><span id="day-exp" class="kpi-val">0</span></div>
-                <div class="kpi-card" style="border-bottom:3px solid var(--primary);"><h3>صافي اليوم</h3><span id="day-net" class="kpi-val">0</span></div>
+                <div class="kpi-card"><h3>إيراد</h3><span id="day-rev" class="kpi-val">0</span></div>
+                <div class="kpi-card"><h3>مصروف</h3><span id="day-exp" class="kpi-val">0</span></div>
+                <div class="kpi-card"><h3>صافي</h3><span id="day-net" class="kpi-val">0</span></div>
             </div>
-            <h3 style="margin-top:40px;">🔒 سجل الرقابة والعمليات</h3>
+            <h3>🔒 سجل الرقابة</h3>
             <div id="action-logs" style="background:#0a0a0a; padding:15px; border-radius:15px; height:200px; overflow-y:auto; font-size:12px; color:#888;"></div>
         </div>
 
         <div id="sec-settings" class="section">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
-                <div class="kpi-card"><h3>💰 التسعير</h3>
-                     فتح العداد: <input type="number" id="conf-baseCost" onchange="saveConfig()">
-                     دقائق الفتح: <input type="number" id="conf-baseMins" onchange="saveConfig()">
-                     سعر الدقيقة: <input type="number" id="conf-pricePerMin" onchange="saveConfig()">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div class="kpi-card">
+                    <h3>💰 التسعير</h3>
+                    فتحة العداد: <input type="number" id="conf-baseCost" onchange="saveConfig()">
+                    سعر الدقيقة: <input type="number" id="conf-pricePerMin" onchange="saveConfig()">
                 </div>
-                <div class="kpi-card"><h3>🛵 الأسطول</h3>
+                <div class="kpi-card">
+                    <h3>🛵 الأسطول</h3>
                     <div style="display:flex; gap:10px;">
-                        <input type="text" id="new-scooter-name" placeholder="S1" maxlength="2">
+                        <input type="text" id="new-scooter-name" placeholder="S1">
                         <button class="btn btn-primary" onclick="addNewScooter()">إضافة</button>
                     </div>
-                    <div id="scooter-mngt-list" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:15px;"></div>
+                    <div id="scooter-mngt-list"></div>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        // --- الأساسيات وربط Firebase (نفس إعداداتك الأصلية) ---
-        const TELEGRAM = { token: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs", chat: "5684905593" };
-        firebase.initializeApp({
-            apiKey: "AIzaSyB2J3KViN4aZYRJ43rYGFtwkmy-jZXBO6c",
-            authDomain: "yalla-scooter-pro.firebaseapp.com",
-            databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
-            projectId: "yalla-scooter-pro",
-            storageBucket: "yalla-scooter-pro.appspot.com",
+<script>
+    const TELEGRAM = { token: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs", chat: "5684905593" };
+    firebase.initializeApp({ databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" });
+    const db = firebase.database();
+    const storage = firebase.storage();
+
+    let activeTrips = {}, config = { baseCost: 40, baseMins: 15, pricePerMin: 2.66 }, currentShiftId = null, currentUser = "موظف", isAdmin = false;
+
+    function login() {
+        const p = document.getElementById('passInput').value;
+        if(p === "1213") { isAdmin = false; document.getElementById('login-overlay').style.display='none'; init(); }
+        else if(p === "9924") { isAdmin = true; document.getElementById('adm-nav').style.display='flex'; document.getElementById('set-nav').style.display='flex'; document.getElementById('login-overlay').style.display='none'; init(); }
+        else alert("خطأ");
+    }
+
+    function init() {
+        db.ref('settings').on('value', s => { if(s.exists()) config = s.val(); });
+        db.ref('shifts/current').on('value', s => {
+            currentShiftId = s.exists() ? s.key : null;
+            document.getElementById('shift-status-text').innerText = s.exists() ? `الموظف: ${s.val().user}` : "الوردية مغلقة";
+            document.getElementById('k-net-cash').innerText = s.exists() ? ((s.val().totalCash||0)-(s.val().totalExpenses||0)) + " ج" : "0";
         });
-        const db = firebase.database();
-        const storage = firebase.storage();
-        
-        let activeTrips = {};
-        let config = { baseCost: 40, baseMins: 15, pricePerMin: 2.66 };
-        let currentShiftId = null;
-        let currentUser = "موظف";
-        let isAdmin = false;
-        let availableScooters = [];
-
-        function login() {
-            const p = document.getElementById('passInput').value;
-            if(p === "1213") { currentUser = "موظف"; isAdmin = false; document.getElementById('login-overlay').style.display = 'none'; initSystem(); }
-            else if(p === "9924") { currentUser = "المدير"; isAdmin = true; document.getElementById('adm-nav').style.display='flex'; document.getElementById('set-nav').style.display='flex'; document.getElementById('login-overlay').style.display = 'none'; initSystem(); }
-            else { alert("خطأ في الرمز"); }
-        }
-
-        function initSystem() {
-            db.ref('settings').on('value', s => { if(s.exists()) config = s.val(); });
-            db.ref('inventory').on('value', snap => {
-                availableScooters = [];
-                const list = document.getElementById('scooter-mngt-list');
-                const maintSelect = document.getElementById('maint-select-scooter');
-                const maintList = document.getElementById('maint-list');
-                list.innerHTML = ''; maintSelect.innerHTML = '<option value="">اختر السكوتر...</option>'; maintList.innerHTML = '';
-                let availC = 0, maintC = 0;
-                snap.forEach(doc => {
-                    const s = doc.val(); const key = doc.key;
-                    list.innerHTML += `<div class="kpi-card" style="padding:10px; cursor:pointer;" onclick="manageScooter('${key}','${s.status}')">${key}</div>`;
-                    if(s.status === 'available') { availableScooters.push(key); maintSelect.innerHTML += `<option value="${key}">${key}</option>`; availC++; }
-                    else if(s.status === 'maintenance') { maintC++; maintList.innerHTML += `<div class="btn-danger" style="padding:10px; margin-bottom:5px; border-radius:10px;">${key}: ${s.issue}</div>`; }
-                });
-                document.getElementById('k-avail').innerText = availC; document.getElementById('k-maint').innerText = maintC;
+        db.ref('active_trips').on('value', snap => { activeTrips = snap.val() || {}; renderTrips(); });
+        db.ref('inventory').on('value', snap => {
+            let avail = 0, maint = 0;
+            const mList = document.getElementById('scooter-mngt-list'); if(mList) mList.innerHTML = "";
+            snap.forEach(s => {
+                if(s.val().status === 'available') avail++;
+                else if(s.val().status === 'maintenance') maint++;
+                if(mList) mList.innerHTML += `<div onclick="manageScooter('${s.key}','${s.val().status}')" style="cursor:pointer; margin:5px; padding:5px; border:1px solid #333;">${s.key}</div>`;
             });
+            document.getElementById('k-avail').innerText = avail; document.getElementById('k-maint').innerText = maint;
+        });
+        db.ref('logs/actions').limitToLast(30).on('value', snap => {
+            const box = document.getElementById('action-logs'); box.innerHTML = "";
+            snap.forEach(l => { box.innerHTML = `<div>[${new Date(l.val().time).toLocaleTimeString()}] ${l.val().msg}</div>` + box.innerHTML; });
+        });
+    }
 
-            db.ref('shifts/current').on('value', s => {
-                const btn = document.getElementById('shift-btn');
-                const txt = document.getElementById('shift-status-text');
-                if(s.exists()) {
-                    currentShiftId = s.key; btn.innerText = "إنهاء الوردية"; btn.classList.replace('btn-primary', 'btn-danger');
-                    txt.innerText = `الوردية تعمل: ${s.val().user}`;
-                    document.getElementById('k-net-cash').innerText = ((s.val().totalCash||0)-(s.val().totalExpenses||0)) + " ج";
-                } else {
-                    currentShiftId = null; btn.innerText = "فتح وردية"; btn.classList.replace('btn-danger', 'btn-primary');
-                    txt.innerText = "الوردية مغلقة";
-                }
-            });
+    async function checkClientStatus(ph) {
+        if(ph.length < 10) return;
+        const snap = await db.ref('clients/'+ph).once('value');
+        const box = document.getElementById('debt-info-box');
+        if(snap.exists() && snap.val().debt > 0) box.innerHTML = `<span class="debt-tag">⚠️ مديونية: ${snap.val().debt} ج</span>`;
+        else box.innerHTML = "";
+    }
 
-            db.ref('active_trips').on('value', snap => { activeTrips = snap.val() || {}; renderTrips(); });
-            db.ref('logs/actions').limitToLast(20).on('value', snap => {
-                const box = document.getElementById('action-logs'); box.innerHTML = "";
-                snap.forEach(l => { box.innerHTML = `<div>[${new Date(l.val().time).toLocaleTimeString()}] ${l.val().msg}</div>` + box.innerHTML; });
-            });
-            if(isAdmin) loadDailyStats(new Date().toISOString().split('T')[0]);
-        }
+    // --- ضغط ورفع الصور وإرسالها للتليجرام ---
+    async function startTripPopup() {
+        if(!currentShiftId) return alert("افتح الوردية");
+        const { value: res } = await Swal.fire({
+            title: 'رحلة جديدة',
+            html: `<input id="sw-ph" class="swal2-input" placeholder="رقم العميل" oninput="checkClientStatus(this.value)"><div id="debt-info-box"></div><input id="sw-sc" class="swal2-input" placeholder="رقم السكوتر"><input id="sw-img" type="file" accept="image/*" class="swal2-file">`,
+            preConfirm: () => [document.getElementById('sw-ph').value, document.getElementById('sw-sc').value, document.getElementById('sw-img').files[0]]
+        });
 
-        // --- المديونية والحظر ---
-        async function checkClientStatus(ph) {
-            if(ph.length < 10) return;
-            const snap = await db.ref('clients/'+ph).once('value');
-            const box = document.getElementById('debt-info-box');
-            if(snap.exists()) {
-                const v = snap.val();
-                if(v.blocked) box.innerHTML = `<span class="debt-tag">🚫 هذا العميل محظور!</span>`;
-                else if(v.debt > 0) box.innerHTML = `<span class="debt-tag">⚠️ مديونية سابقة: ${v.debt} ج</span>`;
-                else box.innerHTML = `<span style="color:var(--success); font-size:12px;">✅ عميل مسجل</span>`;
-            } else box.innerHTML = "";
-        }
+        if(res && res[0]) {
+            const [ph, sc, file] = res;
+            const tripRef = db.ref('active_trips').push();
+            tripRef.set({ phone: ph, scooter: sc, startTime: Date.now(), idPhoto: 'https://i.gifer.com/ZZ5H.gif' });
+            db.ref('inventory/'+sc).update({ status: 'active' });
+            logAction(`بدء رحلة ${sc}`);
 
-        // --- بدء الرحلة (Instant Start) ---
-        async function startTripPopup() {
-            if(!currentShiftId) return alert("افتح الوردية أولاً");
-            const { value: res } = await Swal.fire({
-                title: 'بدء رحلة',
-                background: '#0a1020', color: '#fff',
-                html: `
-                    <input id="sw-ph" class="swal2-input" placeholder="رقم العميل" oninput="checkClientStatus(this.value)">
-                    <div id="debt-info-box"></div>
-                    <select id="sw-sc" class="swal2-input">${availableScooters.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
-                    <input id="sw-img" type="file" accept="image/*" class="swal2-file">
-                `,
-                preConfirm: () => [document.getElementById('sw-ph').value, document.getElementById('sw-sc').value, document.getElementById('sw-img').files[0]]
-            });
-
-            if(res && res[0]) {
-                const [ph, sc, file] = res;
-                const tripRef = db.ref('active_trips').push();
-                tripRef.set({ phone: ph, scooter: sc, startTime: Date.now(), status: 'active', idPhoto: 'https://i.gifer.com/ZZ5H.gif' });
-                db.ref('inventory/'+sc).update({ status: 'active' });
-                logAction(`بدء رحلة للسكوتر ${sc}`);
-                if(file) {
-                    storage.ref(`ids/${Date.now()}`).put(file).then(s=>s.ref.getDownloadURL()).then(url=>tripRef.update({idPhoto: url}));
-                }
+            if(file) {
+                // ضغط الصورة قبل الرفع لسرعة الاستجابة
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 400; canvas.height = 300; // تصغير الحجم
+                        ctx.drawImage(img, 0, 0, 400, 300);
+                        canvas.toBlob(blob => {
+                            const path = `ids/${Date.now()}.jpg`;
+                            storage.ref(path).put(blob).then(snap => snap.ref.getDownloadURL()).then(url => {
+                                tripRef.update({ idPhoto: url });
+                                // إرسال الصورة فوراً للتليجرام
+                                fetch(`https://api.telegram.org/bot${TELEGRAM.token}/sendPhoto`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ chat_id: TELEGRAM.chat, photo: url, caption: `🚀 رحلة جديدة بدأت\n🛵 سكوتر: ${sc}\n👤 رقم: ${ph}` })
+                                });
+                            });
+                        }, 'image/jpeg', 0.7);
+                    };
+                };
             }
         }
+    }
 
-        // --- إنهاء الرحلة ---
-        async function terminateTrip(key) {
-            const t = activeTrips[key];
-            const mins = Math.floor((Date.now() - t.startTime)/60000);
-            let cost = Math.max(config.baseCost, config.baseCost + (mins-config.baseMins)*config.pricePerMin); cost = Math.round(cost);
-            
-            const { value: res } = await Swal.fire({
-                title: 'إنهاء الحساب',
-                background: '#0a1020', color: '#fff',
-                html: `<h1>${cost} ج</h1><p>${mins} دقيقة</p>
-                       <input id="sw-paid" type="number" class="swal2-input" placeholder="المدفوع">
-                       <select id="sw-meth" class="swal2-input"><option value="cash">كاش</option><option value="wallet">محفظة</option></select>
-                       <label style="font-size:12px;"><input type="checkbox" id="sw-blk"> حظر العميل</label>`,
-                preConfirm: () => ({ paid: parseFloat(document.getElementById('sw-paid').value)||0, meth: document.getElementById('sw-meth').value, blk: document.getElementById('sw-blk').checked })
-            });
+    async function terminateTrip(key) {
+        const t = activeTrips[key];
+        const mins = Math.floor((Date.now() - t.startTime)/60000);
+        let cost = Math.max(config.baseCost, Math.round(config.baseCost + (mins-config.baseMins)*config.pricePerMin));
+        const { value: paid } = await Swal.fire({ title: 'إنهاء', html: `الحساب: ${cost} ج`, input: 'number' });
+        if(paid !== null) {
+            const debt = cost - parseFloat(paid);
+            if(debt > 0) db.ref('clients/'+t.phone+'/debt').transaction(c => (c||0) + debt);
+            db.ref('active_trips/'+key).remove();
+            db.ref('inventory/'+t.scooter).update({ status: 'available' });
+            db.ref('shifts/current/totalCash').transaction(c => (c||0) + parseFloat(paid));
+            db.ref('history/'+new Date().toISOString().split('T')[0]).push({ ...t, cost, paid, mins, time: Date.now() });
+            logAction(`إنهاء رحلة ${t.scooter} وتحصيل ${paid}`);
+        }
+    }
 
-            if(res) {
-                const debt = cost - res.paid;
-                db.ref('clients/'+t.phone).update({ debt: firebase.database.ServerValue.increment(debt), blocked: res.blk });
-                db.ref('active_trips/'+key).remove();
-                db.ref('inventory/'+t.scooter).update({ status: 'available' });
-                db.ref('shifts/current/totalCash').transaction(c => (c||0) + res.paid);
-                db.ref('history/'+new Date().toISOString().split('T')[0]).push({ ...t, ...res, cost, mins, time: Date.now() });
-                logAction(`إنهاء رحلة ${t.scooter} وتحصيل ${res.paid}`);
-            }
+    function renderTrips() {
+        const grid = document.getElementById('fleet-grid'); grid.innerHTML = "";
+        for(let k in activeTrips) {
+            const t = activeTrips[k];
+            grid.innerHTML += `<div class="unit-card"><b>${t.scooter}</b><br><img src="${t.idPhoto}" style="width:100%; height:100px; object-fit:cover; border-radius:10px;"><div class="unit-timer">${Math.floor((Date.now()-t.startTime)/60000)} د</div><button class="btn btn-danger" onclick="terminateTrip('${k}')">إنهاء</button></div>`;
         }
+        document.getElementById('k-active').innerText = Object.keys(activeTrips).length;
+    }
 
-        // --- دوال المساعدة المستعادة ---
-        function logAction(m) { db.ref('logs/actions').push({ msg: `${currentUser}: ${m}`, time: Date.now() }); }
-        function nav(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('sec-'+id).classList.add('active');
-            event.currentTarget.classList.add('active');
-            document.getElementById('p-title').innerText = id;
-        }
-        function renderTrips() {
-            const grid = document.getElementById('fleet-grid'); grid.innerHTML = ""; let count = 0;
-            for(let k in activeTrips) {
-                count++; const d = activeTrips[k]; const mins = Math.floor((Date.now()-d.startTime)/60000);
-                grid.innerHTML += `<div class="unit-card ${mins>=60?'overtime':''}">
-                    <div style="display:flex; justify-content:space-between;"><b>${d.scooter}</b><small>${d.phone}</small></div>
-                    <img src="${d.idPhoto}" style="width:100%; height:120px; object-fit:cover; border-radius:15px; margin:10px 0;">
-                    <div class="unit-timer" id="timer-${k}">${mins} د</div>
-                    <button class="btn btn-danger" onclick="terminateTrip('${k}')">إنهاء الحساب</button>
-                </div>`;
-            }
-            document.getElementById('k-active').innerText = count;
-        }
-        function recordAttendance(type) { db.ref('attendance/'+new Date().toISOString().split('T')[0]).push({ user: currentUser, type, time: Date.now() }); alert("تم التسجيل"); }
-        function toggleShift() {
-            if(!currentShiftId) { db.ref('shifts/current').set({ user: currentUser, start: Date.now(), totalCash: 0, totalExpenses: 0 }); logAction("فتح وردية"); }
-            else { if(confirm("إغلاق الوردية؟")) { db.ref('shifts/current').once('value', s => { db.ref('shifts/history').push({...s.val(), end: Date.now()}); db.ref('shifts/current').remove(); }); } }
-        }
-        function addExpensePopup() {
-            const amt = prompt("المبلغ:"); const desc = prompt("السبب:");
-            if(amt) { db.ref('shifts/current/totalExpenses').transaction(c=>(c||0)+parseFloat(amt)); db.ref('expenses/'+new Date().toISOString().split('T')[0]).push({amt, desc, user:currentUser}); }
-        }
-        function loadDailyStats(date) {
-            db.ref('history/'+date).on('value', snap => {
-                let rev = 0; snap.forEach(t => rev += (t.val().paid || 0));
-                document.getElementById('day-rev').innerText = rev + " ج";
-                db.ref('expenses/'+date).once('value', ex => {
-                    let exp = 0; ex.forEach(e => exp += parseFloat(e.val().amt || 0));
-                    document.getElementById('day-exp').innerText = exp + " ج";
-                    document.getElementById('day-net').innerText = (rev-exp) + " ج";
-                });
-            });
-        }
-        function saveConfig() { db.ref('settings').set({ baseCost: parseFloat(document.getElementById('conf-baseCost').value), baseMins: parseFloat(document.getElementById('conf-baseMins').value), pricePerMin: parseFloat(document.getElementById('conf-pricePerMin').value) }); }
-        function addNewScooter() { const n = document.getElementById('new-scooter-name').value; if(n) db.ref('inventory/'+n).set({ status: 'available' }); }
-        async function manageScooter(key, status) {
-            const { isConfirmed } = await Swal.fire({ title: key, text: `الحالة: ${status}`, showDenyButton: true, confirmButtonText: 'متاح', denyButtonText: 'صيانة', showCancelButton: true, cancelButtonText: 'حذف' });
-            if(isConfirmed) db.ref('inventory/'+key).update({status:'available'});
-            else if(isConfirmed === false) { const issue = prompt("السبب:"); db.ref('inventory/'+key).update({status:'maintenance', issue}); }
-        }
-        function loadClients(q) {
-            db.ref('clients').on('value', snap => {
-                const tb = document.getElementById('clients-list'); tb.innerHTML = "";
-                snap.forEach(c => {
-                    if(q && !c.key.includes(q)) return;
-                    const v = c.val();
-                    tb.innerHTML += `<tr><td>زائر</td><td>${c.key}</td><td>0</td><td>${v.debt||0} ج</td><td>${v.blocked?'🚫':'✅'}</td></tr>`;
-                });
-            });
-        }
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('ar-EG'); }, 1000);
-    </script>
+    function logAction(m) { db.ref('logs/actions').push({ msg: `${currentUser}: ${m}`, time: Date.now() }); }
+    function nav(id) { document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); document.getElementById('sec-'+id).classList.add('active'); }
+    function toggleShift() {
+        if(!currentShiftId) { db.ref('shifts/current').set({ user: currentUser, start: Date.now(), totalCash: 0, totalExpenses: 0 }); logAction("فتح وردية"); }
+        else { if(confirm("إغلاق؟")) { db.ref('shifts/current').once('value', s => { db.ref('shifts/history').push({...s.val(), end: Date.now()}); db.ref('shifts/current').remove(); }); } }
+    }
+    function recordAttendance(type) { db.ref('attendance/'+new Date().toISOString().split('T')[0]).push({ user: currentUser, type, time: Date.now() }); alert("تم"); }
+    function saveConfig() { db.ref('settings').update({ baseCost: parseFloat(document.getElementById('conf-baseCost').value), pricePerMin: parseFloat(document.getElementById('conf-pricePerMin').value) }); }
+    function addNewScooter() { const n = document.getElementById('new-scooter-name').value; if(n) db.ref('inventory/'+n).set({ status: 'available' }); }
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('ar-EG'); }, 1000);
+</script>
 </body>
 </html>
