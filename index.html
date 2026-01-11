@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | Tactical Command V7</title>
+    <title>Yalla Scooter | Tactical Live Dashboard</title>
     
+    <!-- Firebase & Icons -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -13,124 +14,128 @@
 
     <style>
         :root {
-            --bg: #020617; --card: #0f172a; --sidebar: #020617;
+            --bg: #020617; --card: #0f172a; --panel: #070d19;
             --primary: #2dd4bf; --accent: #3b82f6; --danger: #f43f5e; --warn: #fbbf24;
-            --text: #f8fafc; --text-muted: #64748b;
+            --text: #f8fafc; --border: #1e293b;
         }
 
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        /* Sidebar */
-        .sidebar { width: 260px; background: var(--sidebar); border-left: 1px solid #1e293b; display: flex; flex-direction: column; z-index: 1000; }
-        .nav-item { padding: 15px 25px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 12px; font-weight: 700; transition: 0.2s; }
-        .nav-item:hover, .nav-item.active { background: #0f172a; color: var(--primary); border-right: 4px solid var(--primary); }
+        /* --- Header --- */
+        header { height: 60px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 100; }
+        .logo { font-family: 'Orbitron'; font-weight: 900; color: var(--primary); letter-spacing: 2px; }
+        #live-clock { font-family: 'Orbitron'; color: var(--primary); font-size: 18px; }
 
-        /* Layout */
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; background: radial-gradient(circle at 10% 10%, #0f172a, transparent); }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
-        .section { display: none; }
-        .section.active { display: block; animation: fadeIn 0.3s ease; }
+        /* --- Main Layout --- */
+        .dashboard-container { display: flex; flex: 1; overflow: hidden; }
 
-        /* KPI & Cards */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .kpi-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #1e293b; text-align: center; }
-        .kpi-val { font-family: 'Orbitron'; font-size: 24px; color: var(--primary); display: block; }
+        /* Panel Style */
+        .side-panel { width: 300px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; gap: 20px; }
+        .center-stage { flex: 1; padding: 20px; overflow-y: auto; background: radial-gradient(circle at center, #0f172a, #020617); }
+        .admin-panel { width: 350px; background: var(--panel); border-right: 1px solid var(--border); padding: 20px; display: none; }
 
-        .scooter-card { background: var(--card); border: 1px solid #1e293b; padding: 20px; border-radius: 15px; margin-bottom: 15px; }
-        .timer-display { font-family: 'Orbitron'; font-size: 32px; color: var(--primary); text-align: center; margin: 15px 0; }
+        /* Cards & UI */
+        .glass-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .section-title { font-weight: 900; font-size: 14px; color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; }
+
+        /* Active Trip Card */
+        .trip-card { background: #1e293b77; border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; backdrop-filter: blur(10px); }
+        .trip-card.paused { border-color: var(--warn); opacity: 0.8; }
+        .live-timer { font-family: 'Orbitron'; font-size: 36px; text-align: center; color: var(--primary); margin: 15px 0; text-shadow: 0 0 10px rgba(45, 212, 191, 0.3); }
         
         /* Buttons */
-        .btn { padding: 10px 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; }
-        .btn-start { background: var(--primary); color: #000; width: 100%; margin-bottom: 20px; font-size: 18px; }
-        .btn-pause { background: var(--warn); color: #000; flex: 1; }
-        .btn-resume { background: var(--accent); color: #fff; flex: 1; }
-        .btn-stop { background: var(--danger); color: #fff; flex: 1; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: #000; width: 100%; }
+        .btn-warn { background: var(--warn); color: #000; flex: 1; }
+        .btn-danger { background: var(--danger); color: #fff; flex: 1; }
+        .btn-accent { background: var(--accent); color: #fff; flex: 1; }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
 
-        .glass-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; font-size: 13px; }
-        th { background: #020617; padding: 12px; text-align: right; color: var(--text-muted); }
-        td { padding: 12px; border-bottom: 1px solid #1e293b; }
+        /* History Table */
+        .history-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .history-table th { text-align: right; color: #64748b; padding-bottom: 10px; }
+        .history-table td { padding: 8px 0; border-bottom: 1px solid #1e293b; }
 
-        #login-overlay { position: fixed; inset: 0; background: #020617; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
-        @media(max-width: 768px) {
-            .sidebar { position: fixed; bottom: 0; width: 100%; height: 65px; flex-direction: row; border-top: 1px solid #1e293b; border-left: none; }
-            .nav-item { flex-direction: column; font-size: 10px; flex: 1; padding: 10px; }
-            .main-content { padding-bottom: 80px; }
+        @media(max-width: 1024px) {
+            .dashboard-container { flex-direction: column; }
+            .side-panel, .admin-panel { width: 100%; border: none; border-bottom: 1px solid var(--border); }
         }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div style="background:var(--card); padding:40px; border-radius:20px; text-align:center; width:340px; border:1px solid #1e293b;">
-            <h1 style="font-family:Orbitron; color:var(--primary)">YALLA LOGIN</h1>
-            <input type="password" id="passInput" style="width:100%; padding:15px; margin:20px 0; background:#000; border:1px solid #1e293b; color:var(--primary); font-size:24px; text-align:center;" placeholder="****">
-            <button onclick="login()" class="btn btn-start">دخول النظام</button>
-        </div>
-    </div>
+    <header>
+        <div class="logo"><i class="fas fa-satellite-dish"></i> YALLA TACTICAL</div>
+        <div id="live-clock">00:00:00</div>
+        <div id="status-tag" style="font-size: 10px; background: #064e3b; color: #2dd4bf; padding: 4px 12px; border-radius: 20px;">SYSTEM ONLINE</div>
+    </header>
 
-    <nav class="sidebar">
-        <div class="nav-item active" onclick="nav('rental')"><i class="fas fa-motorcycle"></i> الرحلات</div>
-        <div class="nav-item" onclick="nav('attendance')"><i class="fas fa-fingerprint"></i> الحضور</div>
-        <div class="nav-item" onclick="nav('maint')"><i class="fas fa-tools"></i> الأعطال</div>
-        <div id="adm-nav" class="nav-item" style="display:none" onclick="nav('admin')"><i class="fas fa-chart-line"></i> الإدارة</div>
-        <div class="nav-item" style="color:var(--danger); margin-top:auto" onclick="location.reload()"><i class="fas fa-power-off"></i></div>
-    </nav>
+    <div class="dashboard-container">
+        
+        <!-- الجانب الأيمن: الأوامر السريعة -->
+        <aside class="side-panel">
+            <div class="glass-card">
+                <div class="section-title"><i class="fas fa-plus-circle"></i> مهمة جديدة</div>
+                <button class="btn btn-primary" onclick="newTripPopup()"><i class="fas fa-motorcycle"></i> بدء رحلة الآن</button>
+            </div>
 
-    <main class="main-content">
-        <div class="top-bar">
-            <h2 id="p-title" style="margin:0">لوحة العمليات</h2>
-            <div id="clock" style="font-family:Orbitron; color:var(--primary)">00:00:00</div>
-        </div>
-
-        <!-- Section: Rental -->
-        <div id="sec-rental" class="section active">
-            <button class="btn btn-start" onclick="newTripPopup()">+ بدء رحلة تكتيكية</button>
-            <div id="active-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:15px;"></div>
-        </div>
-
-        <!-- Section: Maintenance -->
-        <div id="sec-maint" class="section">
-            <button class="btn btn-start" style="background:var(--warn)" onclick="maintPopup()">تسجيل عطل مفاجئ</button>
-            <table class="glass-table">
-                <thead><tr><th>السكوتر</th><th>العطل</th><th>التكلفة</th><th>التاريخ</th></tr></thead>
-                <tbody id="maint-list"></tbody>
-            </table>
-        </div>
-
-        <!-- Section: Attendance -->
-        <div id="sec-attendance" class="section">
-            <div class="kpi-card" style="padding:40px">
-                <i class="fas fa-map-marker-alt" style="font-size:40px; color:var(--primary); margin-bottom:20px;"></i>
-                <h3>تأكيد الموقع الجغرافي</h3>
-                <div style="display:flex; gap:10px; justify-content:center;">
-                    <button class="btn btn-resume" onclick="attendance('IN')">تسجيل حضور</button>
-                    <button class="btn btn-stop" onclick="attendance('OUT')">انصراف</button>
+            <div class="glass-card">
+                <div class="section-title"><i class="fas fa-fingerprint"></i> الحضور الجغرافي</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-accent" style="flex:1" onclick="attendance('IN')">حضور</button>
+                    <button class="btn btn-danger" style="flex:1" onclick="attendance('OUT')">انصراف</button>
                 </div>
             </div>
-        </div>
 
-        <!-- Section: Admin (History) -->
-        <div id="sec-admin" class="section">
-            <div class="top-bar">
-                <input type="date" id="historyDate" onchange="loadHistory(this.value)" style="padding:10px; background:#000; color:white; border:1px solid var(--primary); border-radius:8px;">
-                <div id="day-rev" style="color:var(--primary); font-weight:bold;">إيراد اليوم: 0 ج</div>
+            <div class="glass-card">
+                <div class="section-title"><i class="fas fa-tools"></i> بلاغ عطل</div>
+                <button class="btn btn-warn" onclick="maintPopup()" style="width:100%"><i class="fas fa-exclamation-triangle"></i> تسجيل عطل</button>
             </div>
-            <table class="glass-table">
-                <thead><tr><th>السكوتر</th><th>العميل</th><th>الوقت</th><th>المبلغ</th><th>الخصم</th><th>السبب</th></tr></thead>
-                <tbody id="history-list"></tbody>
-            </table>
-        </div>
-    </main>
+
+            <div class="glass-card">
+                <button class="btn" style="width:100%; background:#1e293b; color:white;" onclick="adminLogin()">دخول الإدارة (9924)</button>
+            </div>
+        </aside>
+
+        <!-- المنتصف: عدادات الرحلات الحية -->
+        <section class="center-stage">
+            <div class="section-title" style="font-size:18px;"><i class="fas fa-play"></i> الرحلات النشطة تحت المراقبة</div>
+            <div id="active-rental-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
+                <!-- العدادات تظهر هنا حية -->
+            </div>
+        </section>
+
+        <!-- الجانب الأيسر: الإدارة (يفتح بالباسورد) -->
+        <aside id="admin-aside" class="admin-panel">
+            <div class="section-title"><i class="fas fa-database"></i> مركز بيانات الإدارة</div>
+            <div class="glass-card" style="background:var(--primary); color:#000; text-align:center;">
+                <small>إجمالي إيراد اليوم</small>
+                <div id="total-revenue" style="font-size:24px; font-weight:900;">0 ج.م</div>
+            </div>
+            
+            <input type="date" id="histDate" onchange="loadHistory(this.value)" style="width:100%; background:#000; color:white; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;">
+            
+            <div style="overflow-y:auto; flex:1;">
+                <table class="history-table">
+                    <thead><tr><th>سكوتر</th><th>وقت</th><th>صافي</th><th>السبب</th></tr></thead>
+                    <tbody id="hist-body"></tbody>
+                </table>
+            </div>
+        </aside>
+
+    </div>
 
     <script>
-        // --- Config ---
+        // --- 1. الإعدادات والربط ---
         const TELEGRAM = { token: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs", chat: "5684905593" };
         const SHOP_LOC = { lat: 30.0444, lng: 31.2357 };
-        const MIN_COST = 40; // أقل مبلغ
-        const MIN_TIME = 15; // أول 15 دقيقة بـ 40
+        const MIN_COST = 40;
+        const MIN_TIME = 15;
 
         firebase.initializeApp({
             apiKey: "AIzaSyB2J3KViN4aZYRJ43rYGFtwkmy-jZXBO6c",
@@ -139,71 +144,84 @@
         });
         const db = firebase.database();
 
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString('ar-EG'), 1000);
+        // ساعة النظام الحية
+        setInterval(() => {
+            document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('ar-EG');
+            updateUIHolders(); // تحديث الأرقام كل ثانية
+        }, 1000);
 
-        // --- Auth ---
-        function login() {
-            const p = document.getElementById('passInput').value;
-            if(p === "1213" || p === "9924") {
-                if(p === "9924") document.getElementById('adm-nav').style.display = 'flex';
-                document.getElementById('login-overlay').style.display = 'none';
-                initSync();
-            } else { Swal.fire('Error', 'Wrong Code', 'error'); }
-        }
+        // --- 2. إدارة الرحلات (العداد الحي) ---
+        let localActiveData = {};
 
-        function nav(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('sec-'+id).classList.add('active');
-            event.currentTarget.classList.add('active');
-            if(id === 'admin') {
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('historyDate').value = today;
-                loadHistory(today);
-            }
-            if(id === 'maint') loadMaint();
-        }
-
-        // --- Core Rental ---
-        function initSync() {
+        function initDataSync() {
             db.ref('active_trips').on('value', snap => {
-                const grid = document.getElementById('active-grid'); grid.innerHTML = "";
-                snap.forEach(t => {
-                    const d = t.val();
-                    let elapsed = 0;
-                    if(d.status === 'active') {
-                        elapsed = Math.floor((Date.now() - d.startTime - (d.pausedDuration || 0)) / 60000);
-                    } else {
-                        elapsed = Math.floor((d.pauseStart - d.startTime - (d.pausedDuration || 0)) / 60000);
-                    }
+                const grid = document.getElementById('active-rental-grid');
+                grid.innerHTML = "";
+                localActiveData = snap.val() || {};
+                
+                if(Object.keys(localActiveData).length === 0) {
+                    grid.innerHTML = `<p style="color:#64748b; grid-column:1/-1; text-align:center; padding:50px;">لا توجد رحلات نشطة حالياً..</p>`;
+                }
 
+                for(let key in localActiveData) {
+                    const d = localActiveData[key];
+                    const isPaused = d.status === 'paused';
                     grid.innerHTML += `
-                        <div class="scooter-card">
-                            <div style="display:flex; justify-content:space-between"><b>${d.scooter}</b><small>${d.client}</small></div>
-                            <div class="timer-display">${elapsed}m</div>
+                        <div class="trip-card ${isPaused ? 'paused' : ''}" id="card-${key}">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <b style="font-size:18px; color:var(--primary)">${d.scooter}</b>
+                                <span style="font-size:10px; background:#0f172a; padding:3px 8px; border-radius:5px;">${d.client}</span>
+                            </div>
+                            <div class="live-timer" id="timer-${key}">00:00:00</div>
                             <div style="display:flex; gap:10px;">
-                                ${d.status === 'active' ? 
-                                    `<button class="btn btn-pause" onclick="pauseTrip('${t.key}')"><i class="fas fa-pause"></i> وقف</button>` : 
-                                    `<button class="btn btn-resume" onclick="resumeTrip('${t.key}')"><i class="fas fa-play"></i> استئناف</button>`
+                                ${!isPaused ? 
+                                    `<button class="btn btn-warn" onclick="pauseTrip('${key}')"><i class="fas fa-pause"></i> وقف</button>` : 
+                                    `<button class="btn btn-accent" onclick="resumeTrip('${key}')"><i class="fas fa-play"></i> استئناف</button>`
                                 }
-                                <button class="btn btn-stop" onclick="endTripPopup('${t.key}', ${elapsed}, '${d.scooter}', '${d.client}')">إنهاء</button>
+                                <button class="btn btn-danger" onclick="endTripPrompt('${key}')">إنهاء</button>
                             </div>
                         </div>
                     `;
-                });
+                }
             });
+        }
+
+        // تحديث الأرقام في العدادات كل ثانية دون إعادة بناء الصفحة
+        function updateUIHolders() {
+            const now = Date.now();
+            for(let key in localActiveData) {
+                const d = localActiveData[key];
+                const timerEl = document.getElementById(`timer-${key}`);
+                if(!timerEl) continue;
+
+                let diffMs = 0;
+                if(d.status === 'active') {
+                    diffMs = now - d.startTime - (d.pausedDuration || 0);
+                } else {
+                    diffMs = d.pauseStart - d.startTime - (d.pausedDuration || 0);
+                }
+
+                const totalSecs = Math.floor(diffMs / 1000);
+                const h = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
+                const m = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+                const s = String(totalSecs % 60).padStart(2, '0');
+                timerEl.innerText = `${h}:${m}:${s}`;
+            }
         }
 
         async function newTripPopup() {
             const { value: form } = await Swal.fire({
-                title: 'بدء رحلة جديدة',
-                html: '<input id="sw-s" class="swal2-input" placeholder="رقم السكوتر"><input id="sw-n" class="swal2-input" placeholder="اسم العميل">',
-                background: '#020617', color: '#fff', confirmButtonColor: '#2dd4bf',
-                preConfirm: () => [document.getElementById('sw-s').value.toUpperCase(), document.getElementById('sw-n').value]
+                title: 'مهمة تأجير جديدة',
+                html: '<input id="s-scoot" class="swal2-input" placeholder="رقم السكوتر"><input id="s-name" class="swal2-input" placeholder="اسم العميل">',
+                background: '#070d19', color: '#fff', confirmButtonColor: '#2dd4bf',
+                preConfirm: () => [document.getElementById('s-scoot').value.toUpperCase(), document.getElementById('s-name').value]
             });
             if(form && form[0]) {
-                db.ref('active_trips').push({ scooter:form[0], client:form[1]||'زائر', startTime:Date.now(), status:'active', pausedDuration: 0 });
-                sendTG(`🛵 <b>رحلة بدأت</b>\nالسكوتر: ${form[0]}\nالعميل: ${form[1]||'زائر'}`);
+                db.ref('active_trips').push({ 
+                    scooter: form[0], client: form[1]||'زائر', 
+                    startTime: Date.now(), status: 'active', pausedDuration: 0 
+                });
+                sendTG(`🛵 <b>مهمة بدأت</b>\nالسكوتر: ${form[0]}\nالعميل: ${form[1]||'زائر'}`);
             }
         }
 
@@ -215,102 +233,104 @@
             db.ref(`active_trips/${key}`).once('value', snap => {
                 const d = snap.val();
                 const diff = Date.now() - d.pauseStart;
-                db.ref(`active_trips/${key}`).update({ status: 'active', pausedDuration: (d.pausedDuration || 0) + diff });
+                db.ref(`active_trips/${key}`).update({ 
+                    status: 'active', 
+                    pausedDuration: (d.pausedDuration || 0) + diff 
+                });
             });
         }
 
-        async function endTripPopup(key, mins, scooter, client) {
-            // حساب السعر: أول 15 دقيقة بـ 40، الدقيقة الزيادة بـ 2.66 (تقريباً 40/15)
+        async function endTripPrompt(key) {
+            const d = localActiveData[key];
+            const now = Date.now();
+            let diffMs = (d.status === 'active') ? (now - d.startTime - (d.pausedDuration || 0)) : (d.pauseStart - d.startTime - (d.pausedDuration || 0));
+            const mins = Math.floor(diffMs / 60000);
+            
+            // حساب التكلفة: 40 ج أول ربع ساعة، ثم دقيقة بـ 2.66
             let cost = MIN_COST;
-            if(mins > MIN_TIME) {
-                cost = MIN_COST + (mins - MIN_TIME) * 2.66;
-            }
+            if(mins > MIN_TIME) cost = MIN_COST + (mins - MIN_TIME) * 2.66;
             cost = Math.round(cost);
 
-            const { value: result } = await Swal.fire({
-                title: 'إنهاء الحساب',
+            const { value: res } = await Swal.fire({
+                title: 'إتمام التحصيل',
                 html: `
-                    <h2 style="color:var(--primary)">${cost} ج.م</h2>
-                    <p>الوقت: ${mins} دقيقة</p>
-                    <hr>
-                    <input id="sw-disc" type="number" class="swal2-input" placeholder="مبلغ الخصم (إن وجد)">
-                    <input id="sw-reason" class="swal2-input" placeholder="سبب الخصم / العطل">
+                    <h1 style="color:var(--primary); margin:0;">${cost} ج.م</h1>
+                    <small>المدة: ${mins} دقيقة</small><hr style="border-color:#334155">
+                    <input id="sw-disc" type="number" class="swal2-input" placeholder="مبلغ الخصم">
+                    <input id="sw-why" class="swal2-input" placeholder="سبب الخصم / العطل">
                 `,
-                background: '#020617', color: '#fff', showCancelButton: true,
+                background: '#070d19', color: '#fff', showCancelButton: true,
                 preConfirm: () => {
-                    return { disc: parseFloat(document.getElementById('sw-disc').value) || 0, reason: document.getElementById('sw-reason').value }
+                    return { disc: parseFloat(document.getElementById('sw-disc').value) || 0, reason: document.getElementById('sw-why').value }
                 }
             });
 
-            if(result) {
-                const final = cost - result.disc;
+            if(res) {
+                const final = cost - res.disc;
                 const today = new Date().toISOString().split('T')[0];
-                
-                db.ref(`history/${today}`).push({ scooter, client, mins, cost, disc: result.disc, reason: result.reason, final });
+                db.ref(`history/${today}`).push({ 
+                    scooter: d.scooter, client: d.client, mins, 
+                    cost, disc: res.disc, reason: res.reason, final 
+                });
                 db.ref('active_trips/'+key).remove();
 
-                let msg = `🏁 <b>انتهت الرحلة</b>\n🛵 ${scooter}\n🕒 ${mins} دقيقة\n💰 المبلغ: ${cost} ج`;
-                if(result.disc > 0) msg += `\n⚠️ خصم: ${result.disc} ج\n📝 السبب: ${result.reason}\n✅ المحصل: ${final} ج`;
+                let msg = `🏁 <b>رحلة مكتملة</b>\n🛵 ${d.scooter}\n🕒 ${mins} دقيقة\n💰 المبلغ: ${cost} ج`;
+                if(res.disc > 0) msg += `\n⚠️ خصم: ${res.disc} ج\n📝 السبب: ${res.reason}\n✅ الصافي: ${final} ج`;
                 sendTG(msg);
-
-                Swal.fire('تم الإنهاء', `المحصل: ${final} ج`, 'success');
             }
         }
 
-        // --- Admin & History ---
+        // --- 3. الإدارة والتاريخ ---
+        function adminLogin() {
+            Swal.fire({
+                title: 'كود الإدارة', input: 'password', background: '#070d19', color: '#fff',
+                preConfirm: (v) => v === "9924" ? true : Swal.showValidationMessage('خطأ')
+            }).then(r => {
+                if(r.isConfirmed) {
+                    document.getElementById('admin-aside').style.display = 'flex';
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('histDate').value = today;
+                    loadHistory(today);
+                }
+            });
+        }
+
         function loadHistory(date) {
             db.ref(`history/${date}`).on('value', snap => {
-                const list = document.getElementById('history-list'); list.innerHTML = "";
+                const tb = document.getElementById('hist-body'); tb.innerHTML = "";
                 let total = 0;
                 snap.forEach(c => {
                     const v = c.val();
                     total += (v.final || 0);
-                    list.innerHTML += `<tr><td>${v.scooter}</td><td>${v.client}</td><td>${v.mins}m</td><td>${v.cost}</td><td style="color:red">${v.disc}</td><td>${v.reason||'-'}</td></tr>`;
+                    tb.innerHTML += `<tr><td>${v.scooter}</td><td>${v.mins}m</td><td style="color:var(--primary)">${v.final}</td><td>${v.reason||'-'}</td></tr>`;
                 });
-                document.getElementById('day-rev').innerText = `إيراد اليوم: ${total} ج`;
+                document.getElementById('total-revenue').innerText = total + " ج.م";
             });
         }
 
-        // --- Maintenance ---
+        // --- 4. خدمات إضافية ---
         async function maintPopup() {
             const { value: f } = await Swal.fire({
-                title: 'تسجيل عطل',
-                html: '<input id="m-s" class="swal2-input" placeholder="السكوتر"><input id="m-e" class="swal2-input" placeholder="العطل"><input id="m-c" class="swal2-input" type="number" placeholder="تكلفة القطعة">',
-                background: '#020617', color: '#fff',
+                title: 'بلاغ عطل تكتيكي',
+                html: '<input id="m-s" class="swal2-input" placeholder="رقم السكوتر"><input id="m-e" class="swal2-input" placeholder="وصف العطل"><input id="m-c" class="swal2-input" type="number" placeholder="التكلفة التقديرية">',
+                background: '#070d19', color: '#fff',
                 preConfirm: () => [document.getElementById('m-s').value.toUpperCase(), document.getElementById('m-e').value, document.getElementById('m-c').value]
             });
-            if(f) {
-                db.ref('maintenance_log').push({ scooter:f[0], error:f[1], cost:parseFloat(f[2])||0, date:Date.now() });
-                sendTG(`🛠️ <b>عطل مسجل</b>\n🛵 ${f[0]}\n🔧 العطل: ${f[1]}\n💰 التكلفة: ${f[2]} ج`);
-                Swal.fire('تم', 'سُجل العطل بنجاح', 'success');
+            if(f && f[0]) {
+                db.ref('maintenance_log').push({ scooter: f[0], error: f[1], cost: parseFloat(f[2])||0, date: Date.now() });
+                sendTG(`🛠️ <b>عطل طارئ</b>\n🛵 ${f[0]}\n🔧 العطل: ${f[1]}\n💰 التكلفة: ${f[2]} ج`);
+                Swal.fire('تم التسجيل', '', 'success');
             }
         }
 
-        function loadMaint() {
-            db.ref('maintenance_log').limitToLast(15).on('value', snap => {
-                const tb = document.getElementById('maint-list'); tb.innerHTML = "";
-                snap.forEach(c => {
-                    const v = c.val();
-                    tb.innerHTML += `<tr><td>${v.scooter}</td><td>${v.error}</td><td style="color:red">${v.cost}</td><td>${new Date(v.date).toLocaleDateString()}</td></tr>`;
-                });
-            });
-        }
-
-        // --- Utils ---
-        function sendTG(text) {
-            fetch(`https://api.telegram.org/bot${TELEGRAM.token}/sendMessage`, {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ chat_id: TELEGRAM.chat, text, parse_mode: 'HTML' })
-            });
-        }
-
         function attendance(type) {
+            if(!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(pos => {
                 const dist = getDist(pos.coords.latitude, pos.coords.longitude, SHOP_LOC.lat, SHOP_LOC.lng);
-                if(dist > 200) return Swal.fire('Error', 'بعيد عن المحل', 'error');
+                if(dist > 200) return Swal.fire('فشل!', 'يجب أن تكون في نطاق المحل', 'error');
                 const t = new Date().toLocaleTimeString();
                 sendTG(`📍 <b>${type==='IN'?'حضور':'انصراف'}</b>\n🕒 الوقت: ${t}`);
-                Swal.fire('تم', `سُجلت الحركة: ${t}`, 'success');
+                Swal.fire('تم الحفظ', t, 'success');
             });
         }
 
@@ -320,6 +340,16 @@
             const a = Math.sin(dl/2)**2 + Math.cos(d1)*Math.cos(d2)*Math.sin(do1/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
+
+        function sendTG(text) {
+            fetch(`https://api.telegram.org/bot${TELEGRAM.token}/sendMessage`, {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ chat_id: TELEGRAM.chat, text, parse_mode: 'HTML' })
+            });
+        }
+
+        // تشغيل المزامنة عند البداية
+        initDataSync();
 
     </script>
 </body>
