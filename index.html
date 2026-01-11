@@ -3,150 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | Dual System</title>
+    <title>Yalla Scooter | V33 GPS & Alerts</title>
     
-    <!-- Firebase & Icons -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root {
-            --primary: #007bff; --admin-bg: #1a1a2e; --staff-bg: #f8f9fa;
-            --success: #28a745; --danger: #dc3545; --warning: #ffc107;
-        }
+        :root { --main: #007bff; --dark: #1e1e2d; --bg: #f4f7f6; --success: #28a745; --orange: #fd7e14; --red: #dc3545; }
         * { box-sizing: border-box; font-family: 'Cairo', sans-serif; outline: none; }
-        body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+        body { margin: 0; background: var(--bg); padding-bottom: 80px; }
 
-        /* --- شاشة الدخول --- */
-        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: #111; padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #333; width: 90%; max-width: 350px; }
-        .login-box input { width: 100%; padding: 15px; margin: 20px 0; border-radius: 10px; border: none; text-align: center; font-size: 20px; letter-spacing: 5px; }
+        .header { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .admin-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 20px; color: white; cursor: pointer; }
 
-        /* --- تنسيقات عامة --- */
-        .container { padding: 15px; max-width: 1000px; margin: 0 auto; width: 100%; }
-        .btn { border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px; margin-top: 5px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
+        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+        .btn-big { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-bottom: 10px; cursor: pointer; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-blue { background: var(--main); }
+        .btn-green { background: var(--success); }
+        .btn-red { background: var(--red); }
+
+        /* كروت الرحلات */
+        .trip-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; border-right: 5px solid var(--main); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .timer { font-size: 28px; font-weight: 800; font-family: monospace; color: #333; }
+
+        /* لوحة الإدارة */
+        #admin-panel { position: fixed; inset: 0; background: #151521; color: white; z-index: 5000; overflow-y: auto; display: none; padding: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; }
+        .tab-btn { background: #2b2b40; color: #aaa; border: none; padding: 10px 20px; border-radius: 8px; white-space: nowrap; cursor: pointer; }
+        .tab-btn.active { background: var(--main); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        .data-table th { background: #000; padding: 10px; text-align: right; color: #888; }
+        .data-table td { background: #1e1e2d; padding: 10px; border-bottom: 1px solid #333; }
+
+        /* حالة الحضور */
+        .status-badge { padding: 5px 10px; border-radius: 5px; color: white; font-size: 11px; }
+        .bg-green { background: var(--success); }
+        .bg-orange { background: var(--orange); }
+        .bg-red { background: var(--red); }
+
+        /* المودال */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .modal-box { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; }
+        .modal input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; text-align: center; }
         .hidden { display: none !important; }
-
-        /* --- واجهة الموظف (Rental) --- */
-        .rental-mode { background: var(--staff-bg); color: #333; }
-        .trip-card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-right: 5px solid var(--primary); }
-        .timer { font-size: 30px; font-weight: 800; font-family: monospace; color: #333; }
-
-        /* --- واجهة الأدمن (Admin) --- */
-        .admin-mode { background: var(--admin-bg); color: white; }
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        .admin-table th { background: #000; padding: 10px; color: #aaa; }
-        .admin-table td { background: rgba(255,255,255,0.05); padding: 10px; border-bottom: 1px solid #333; }
-
-        /* --- AI Assistant --- */
-        .ai-fab { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: linear-gradient(45deg, #ff00cc, #3333ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,204,0.5); z-index: 1000; }
-        .ai-window { position: fixed; bottom: 90px; left: 20px; width: 300px; height: 400px; background: #161b22; border: 1px solid #30363d; border-radius: 15px; display: none; flex-direction: column; overflow: hidden; z-index: 1000; }
-        .ai-chat { flex: 1; padding: 10px; overflow-y: auto; font-size: 13px; }
-        .ai-input-area { padding: 10px; border-top: 1px solid #30363d; display: flex; }
-        .msg-ai { background: #21262d; padding: 8px; border-radius: 10px; margin-bottom: 5px; color: #c9d1d9; border-left: 3px solid #ff00cc; }
-        .msg-user { background: #1f6feb; padding: 8px; border-radius: 10px; margin-bottom: 5px; color: white; align-self: flex-end; text-align: left; }
     </style>
 </head>
 <body>
 
-    <!-- 1. شاشة الدخول الموحدة -->
-    <div id="login-overlay">
-        <div class="login-box">
-            <h1 style="color:white; margin-bottom:5px;">Yalla Scooter</h1>
-            <p style="color:#777; font-size:12px;">System V30</p>
-            <input type="password" id="passInput" placeholder="أدخل الكود" inputmode="numeric">
-            <button class="btn btn-primary" onclick="checkLogin()">دخول</button>
+    <!-- 1. شاشة الدخول الأولية -->
+    <div id="login-modal" class="modal">
+        <div class="modal-box">
+            <h2>🔐 Yalla Scooter</h2>
+            <input type="password" id="initPass" placeholder="كود الموظف (1213)" inputmode="numeric">
+            <button class="btn-big btn-blue" onclick="unlock()">دخول</button>
         </div>
     </div>
 
-    <!-- 2. واجهة التشغيل (للموظف والأدمن) -->
-    <div id="app-container" class="container hidden">
-        
-        <!-- هيدر الأدمن (يظهر فقط للأدمن) -->
-        <div id="admin-header" class="hidden" style="margin-bottom:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2><i class="fas fa-user-secret"></i> لوحة الإدارة الذكية</h2>
-                <button onclick="logout()" style="background:none; border:none; color:#dc3545; font-weight:bold;">خروج</button>
-            </div>
-            
-            <!-- إحصائيات الإدارة -->
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <h3 id="totalIncome" style="color:#28a745; margin:0;">0</h3>
-                    <small>إيراد اليوم</small>
-                </div>
-                <div class="stat-card">
-                    <h3 id="activeTripsCount" style="color:#007bff; margin:0;">0</h3>
-                    <small>رحلات جارية</small>
-                </div>
-                <div class="stat-card">
-                    <h3 id="onlineStaffCount" style="color:#ffc107; margin:0;">0</h3>
-                    <small>موظفين أونلاين</small>
-                </div>
+    <!-- 2. الواجهة الرئيسية -->
+    <div id="main-ui" class="hidden">
+        <div class="header">
+            <div style="font-weight:bold;">⚡ Yalla Scooter</div>
+            <button class="admin-btn" onclick="openAdmin()">الإدارة 9924</button>
+        </div>
+
+        <div class="container">
+            <!-- أزرار الحضور والانصراف -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="btn-big btn-green" onclick="handleAttendance('IN')" style="margin:0;">📍 تسجيل حضور</button>
+                <button class="btn-big btn-red" onclick="handleAttendance('OUT')" style="margin:0;">👋 انصراف</button>
             </div>
 
-            <!-- جدول الموظفين -->
-            <h4 style="color:#aaa; margin-bottom:5px;">🔴 المراقبة الحية</h4>
-            <table class="admin-table">
-                <thead><tr><th>الموظف</th><th>الحالة</th><th>تحكم</th></tr></thead>
-                <tbody id="staffTableBody"></tbody>
+            <button class="btn-big btn-blue" onclick="document.getElementById('newTripModal').classList.remove('hidden')">
+                <i class="fas fa-plus-circle"></i> رحلة جديدة
+            </button>
+
+            <h4 style="color:#888;">الرحلات الجارية:</h4>
+            <div id="trips-list"></div>
+        </div>
+    </div>
+
+    <!-- 3. لوحة الإدارة -->
+    <div id="admin-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2>📊 الإدارة والتقارير</h2>
+            <button onclick="document.getElementById('admin-panel').style.display='none'" style="background:none; border:none; color:white; font-size:24px;">&times;</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">الرئيسية</button>
+            <button class="tab-btn" onclick="switchTab('attendance')">سجل الحضور</button>
+            <button class="tab-btn" onclick="switchTab('history')">الأرشيف</button>
+            <button class="tab-btn" onclick="switchTab('scooters')">الاسكوترات</button>
+        </div>
+
+        <!-- الرئيسية -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div style="background:#2b2b40; padding:15px; border-radius:10px; text-align:center; margin-bottom:20px;">
+                <h2 id="revenueText" style="color:#28a745; margin:0;">0</h2>
+                <small>إيراد اليوم</small>
+            </div>
+            <!-- AI -->
+            <div style="background:#1e1e2d; padding:15px; border-radius:10px; border:1px solid #333;">
+                <h4 style="color:#ffc107; margin:0 0 10px 0;">🧠 AI Assistant</h4>
+                <div id="aiChat" style="height:100px; overflow-y:auto; font-size:12px; color:#ccc; margin-bottom:10px;"></div>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="aiInput" placeholder="اسألني..." style="width:100%; background:#333; border:none; color:white; padding:8px;">
+                    <button onclick="askAI()" style="background:#007bff; color:white; border:none; padding:0 10px;">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- سجل الحضور -->
+        <div id="tab-attendance" class="tab-content">
+            <button onclick="loadAttendanceLog()" class="btn-big btn-blue" style="padding:10px; font-size:14px;">تحديث السجل</button>
+            <table class="data-table">
+                <thead><tr><th>الموظف</th><th>حضور</th><th>انصراف</th><th>الحالة</th></tr></thead>
+                <tbody id="attTable"></tbody>
             </table>
         </div>
 
-        <!-- هيدر الموظف (يظهر للموظف فقط) -->
-        <div id="staff-header" class="hidden" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
-            <h3>🛵 نظام التأجير</h3>
-            <button onclick="logout()" style="background:#eee; padding:5px 15px; border-radius:20px; border:none;">خروج</button>
+        <!-- سجل التاريخ -->
+        <div id="tab-history" class="tab-content">
+            <input type="date" onchange="loadHistory(this.value)" style="width:100%; padding:10px; margin-bottom:10px;">
+            <table class="data-table">
+                <thead><tr><th>سكوتر</th><th>عميل</th><th>مدة</th><th>سعر</th></tr></thead>
+                <tbody id="histTable"></tbody>
+            </table>
         </div>
 
-        <!-- أزرار التحكم (مشتركة) -->
-        <button class="btn btn-primary" onclick="document.getElementById('newTripModal').style.display='flex'" style="padding:15px; font-size:18px; margin-bottom:20px;">
-            <i class="fas fa-plus"></i> تسجيل رحلة جديدة
-        </button>
-
-        <!-- قائمة الرحلات -->
-        <div id="trips-list"></div>
-
-    </div>
-
-    <!-- 3. المساعد الذكي AI (للأدمن فقط) -->
-    <div id="ai-assistant" class="hidden">
-        <div class="ai-fab" onclick="toggleAI()"><i class="fas fa-robot"></i></div>
-        <div class="ai-window" id="aiWindow">
-            <div style="padding:10px; background:#21262d; border-bottom:1px solid #30363d; font-weight:bold;">🧠 المساعد الذكي</div>
-            <div class="ai-chat" id="aiChatBody">
-                <div class="msg-ai">أهلاً يا ريس! أنا شايف كل البيانات. اسألني عن الفلوس، الأعطال، أو الموظفين.</div>
-            </div>
-            <div class="ai-input-area">
-                <input type="text" id="aiInput" placeholder="اكتب سؤالك..." style="flex:1; background:transparent; border:none; color:white;">
-                <button onclick="askAI()" style="background:none; border:none; color:#ff00cc;"><i class="fas fa-paper-plane"></i></button>
-            </div>
+        <!-- الاسكوترات -->
+        <div id="tab-scooters" class="tab-content">
+            <button onclick="loadScooters()" class="btn-big btn-blue" style="padding:10px; font-size:14px;">تحديث</button>
+            <table class="data-table">
+                <thead><tr><th>رقم السكوتر</th><th>دخل (ج.م)</th><th>أعطال</th></tr></thead>
+                <tbody id="scooterTable"></tbody>
+            </table>
         </div>
     </div>
 
     <!-- مودال رحلة جديدة -->
-    <div id="newTripModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
-        <div style="background:white; padding:20px; border-radius:15px; width:90%; max-width:400px; text-align:right;">
-            <h3>رحلة جديدة</h3>
-            <input type="text" id="t_scooter" placeholder="رقم السكوتر (S1)" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc;">
-            <input type="text" id="t_phone" placeholder="رقم العميل" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc;">
-            <input type="text" id="t_name" placeholder="اسم العميل" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc;">
-            <button class="btn btn-primary" onclick="startTrip()">تأكيد البدء</button>
-            <button class="btn btn-danger" onclick="document.getElementById('newTripModal').style.display='none'" style="margin-top:5px;">إلغاء</button>
+    <div id="newTripModal" class="modal hidden">
+        <div class="modal-box">
+            <h3>تسجيل رحلة</h3>
+            <input type="text" id="t_scooter" placeholder="رقم السكوتر (S1)" style="text-transform:uppercase;">
+            <input type="tel" id="t_phone" placeholder="رقم الهاتف">
+            <input type="text" id="t_client" placeholder="اسم العميل">
+            <button class="btn-big btn-blue" onclick="startTrip()">بدء</button>
+            <button onclick="document.getElementById('newTripModal').classList.add('hidden')" style="background:none; border:none; color:red;">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- مودال إنهاء رحلة -->
+    <div id="endModal" class="modal hidden">
+        <div class="modal-box">
+            <h3>إنهاء الرحلة</h3>
+            <h1 id="endCost" style="color:#007bff;">0</h1>
+            <p>جنيه مصري</p>
+            <hr>
+            <label style="display:block; margin:10px 0; text-align:right;">
+                <input type="checkbox" id="hasIssue" style="width:auto;"> ⚠️ يوجد عطل في السكوتر
+            </label>
+            <input type="text" id="issueNote" placeholder="وصف العطل" style="display:none;">
+            
+            <button class="btn-big btn-red" onclick="confirmEnd()">تأكيد الإنهاء</button>
+            <button onclick="document.getElementById('endModal').classList.add('hidden')" style="background:none; border:none; color:#333;">تراجع</button>
         </div>
     </div>
 
     <script>
-        // --- 1. إعدادات فايربيس ---
+        // --- إعدادات هامة (عدلها هنا) ---
+        const SHOP_LAT = 30.0444; // ⚠️ استبدل بالاحداثيات من جوجل ماب
+        const SHOP_LNG = 31.2357; // ⚠️ استبدل بالاحداثيات من جوجل ماب
+        const ALLOWED_RADIUS = 150; // المسافة المسموحة بالمتر
+        const TELEGRAM_TOKEN = "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs"; 
+        const CHAT_ID = "5684905593"; 
+
+        // --- Firebase ---
         const firebaseConfig = {
             apiKey: "AIzaSyB2J3KViN4aZYRJ43rYGFtwkmy-jZXBO6c",
-            authDomain: "yalla-scooter-pro.firebaseapp.com",
+            authDomain: "yala-scooter-pro.firebaseapp.com",
             databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
             projectId: "yalla-scooter-pro",
             storageBucket: "yalla-scooter-pro.firebasestorage.app",
@@ -156,197 +196,261 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- 2. المتغيرات العامة ---
-        let IS_ADMIN = false;
-        let todayRevenue = 0;
-        let activeTripsCount = 0;
-        let issuesList = [];
+        let currentEndKey = null;
+        let currentEndData = null;
+        let revenueToday = 0;
 
-        // --- 3. نظام الدخول الذكي ---
-        function checkLogin() {
-            const p = document.getElementById('passInput').value;
-            
-            if (p === "1213") {
-                // وضع الموظف (Rental Mode)
-                IS_ADMIN = false;
-                document.body.classList.add('rental-mode');
-                document.getElementById('staff-header').classList.remove('hidden');
-                initSystem();
-            } 
-            else if (p === "9924") {
-                // وضع الإدارة (Admin Mode)
-                IS_ADMIN = true;
-                document.body.classList.add('admin-mode');
-                document.getElementById('admin-header').classList.remove('hidden');
-                document.getElementById('ai-assistant').classList.remove('hidden');
-                initSystem();
-                initAdminFeatures();
-            } 
-            else {
-                alert("❌ كود خاطئ");
+        // --- 1. الدخول ---
+        function unlock() {
+            if(document.getElementById('initPass').value === "1213") {
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('main-ui').classList.remove('hidden');
+                loadTrips();
+            } else alert("خطأ");
+        }
+
+        function openAdmin() {
+            if(prompt("كود الإدارة") === "9924") {
+                document.getElementById('admin-panel').style.display = 'block';
+                loadStats();
             }
         }
 
-        function initSystem() {
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('app-container').classList.remove('hidden');
+        // --- 2. GPS & Attendance Logic ---
+        function handleAttendance(type) {
+            if(!navigator.geolocation) return alert("المتصفح لا يدعم GPS");
             
-            // تحميل الرحلات الجارية (للجميع)
+            alert("جاري تحديد موقعك... انتظر لحظة 🛰️");
+            
+            navigator.geolocation.getCurrentPosition(pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const dist = getDistance(lat, lng, SHOP_LAT, SHOP_LNG);
+
+                if(dist > ALLOWED_RADIUS) {
+                    alert(`❌ أنت بعيد عن المحل! المسافة: ${Math.floor(dist)} متر.\nلازم تكون في اللوكيشن.`);
+                    return;
+                }
+
+                // لو الموقع تمام، نفذ المنطق
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('ar-EG');
+                const today = now.toISOString().split('T')[0];
+                const staffName = "موظف الشفت"; // ممكن نخليه يكتب اسمه
+
+                if(type === 'IN') {
+                    // منطق الألوان (3:00 م)
+                    // الساعة 15:00
+                    const h = now.getHours();
+                    const m = now.getMinutes();
+                    
+                    let status = "green"; 
+                    let note = "✅ حضور مبكر/في الموعد";
+
+                    // 3:00 PM is 15 in 24h format
+                    if (h > 15 || (h === 15 && m > 30)) {
+                        status = "red"; note = "🛑 تأخير (خصم)";
+                    } else if (h === 15 && m > 15) {
+                        status = "orange"; note = "⚠️ تأخير بسيط";
+                    }
+
+                    db.ref(`attendance/${today}/${staffName}`).update({
+                        checkIn: timeString,
+                        status: status,
+                        inLat: lat, inLng: lng
+                    });
+
+                    sendTele(`📍 <b>تسجيل حضور</b>\n👤 ${staffName}\n🕒 ${timeString}\n🎨 الحالة: ${note}`);
+                    alert(note);
+                } 
+                else {
+                    db.ref(`attendance/${today}/${staffName}`).update({
+                        checkOut: timeString
+                    });
+                    sendTele(`👋 <b>انصراف</b>\n👤 ${staffName}\n🕒 ${timeString}`);
+                    alert("تم تسجيل الانصراف. الله ينور!");
+                }
+
+            }, err => alert("فشل تحديد الموقع. تأكد من تفعيل GPS."));
+        }
+
+        // --- 3. Scooter & Trips ---
+        function startTrip() {
+            const s = document.getElementById('t_scooter').value.toUpperCase();
+            const p = document.getElementById('t_phone').value;
+            const c = document.getElementById('t_client').value;
+            if(!s) return alert("اكتب رقم السكوتر");
+
+            db.ref('active_trips').push({ scooter: s, phone: p, client: c, start: Date.now() });
+            document.getElementById('newTripModal').classList.add('hidden');
+        }
+
+        function loadTrips() {
             db.ref('active_trips').on('value', snap => {
                 const list = document.getElementById('trips-list');
                 list.innerHTML = "";
-                activeTripsCount = 0;
-                
                 if(snap.exists()) {
                     snap.forEach(t => {
                         const trip = t.val();
-                        const key = t.key;
-                        activeTripsCount++;
-                        
-                        // حساب الوقت
-                        let duration = Math.floor((Date.now() - trip.start)/60000);
-                        
+                        const mins = Math.floor((Date.now() - trip.start)/60000);
                         list.innerHTML += `
                             <div class="trip-card">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <h2>${trip.scooter}</h2>
-                                    <span style="color:#777">${trip.client}</span>
+                                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                                    <span>${trip.scooter}</span>
+                                    <span>${trip.client || 'زائر'}</span>
                                 </div>
-                                <div class="timer">${duration} دقيقة</div>
-                                <div style="font-size:12px; color:#888;">بواسطة: ${trip.staff || 'غير معروف'}</div>
-                                <button class="btn btn-danger" onclick="endTrip('${key}')" style="margin-top:10px;">إنهاء وحساب</button>
+                                <div class="timer">${mins} دقيقة</div>
+                                <button class="btn-big btn-red" onclick="openEndModal('${t.key}')" style="margin:0; font-size:14px; padding:10px;">إنهاء وحساب</button>
                             </div>
                         `;
                     });
                 }
-                
-                // تحديث عداد الأدمن
-                if(IS_ADMIN) document.getElementById('activeTripsCount').innerText = activeTripsCount;
+            });
+            setTimeout(loadTrips, 60000);
+        }
+
+        function openEndModal(key) {
+            currentEndKey = key;
+            db.ref('active_trips/'+key).once('value', snap => {
+                currentEndData = snap.val();
+                let mins = Math.ceil((Date.now() - currentEndData.start)/60000);
+                if(mins < 15) mins = 15;
+                let cost = mins * 1; // سعر الدقيقة
+                document.getElementById('endCost').innerText = cost;
+                document.getElementById('endModal').classList.remove('hidden');
             });
         }
 
-        // --- 4. ميزات الأدمن فقط ---
-        function initAdminFeatures() {
-            // حساب الإيراد اليومي
+        function confirmEnd() {
+            const hasIssue = document.getElementById('hasIssue').checked;
+            const issueNote = document.getElementById('issueNote').value;
+            const cost = parseFloat(document.getElementById('endCost').innerText);
+            const today = new Date().toISOString().split('T')[0];
+
+            // 1. حفظ في الأرشيف
+            db.ref(`history/${today}`).push({
+                ...currentEndData, end: Date.now(), cost: cost, hasIssue: hasIssue, issueReason: issueNote
+            });
+
+            // 2. تحديث سجل الاسكوتر (والتنبيه)
+            if(hasIssue) {
+                const scooterRef = db.ref(`scooters/${currentEndData.scooter}`);
+                scooterRef.transaction(current => {
+                    const newCount = (current?.issueCount || 0) + 1;
+                    if(newCount >= 3) {
+                        sendTele(`🚨 <b>تحذير خطر!</b>\nالاسكوتر ${currentEndData.scooter}\nسجل أعطال ${newCount} مرات!\nيرجى الصيانة فوراً.`);
+                    }
+                    return { ...current, issueCount: newCount, totalRevenue: (current?.totalRevenue||0)+cost };
+                });
+            } else {
+                db.ref(`scooters/${currentEndData.scooter}/totalRevenue`).transaction(v => (v||0)+cost);
+            }
+
+            // 3. حذف من النشط
+            db.ref('active_trips/'+currentEndKey).remove();
+            
+            document.getElementById('endModal').classList.add('hidden');
+            document.getElementById('hasIssue').checked = false;
+            document.getElementById('issueNote').style.display='none';
+        }
+
+        // --- 4. Admin Helpers ---
+        function loadStats() {
             const today = new Date().toISOString().split('T')[0];
             db.ref(`history/${today}`).on('value', snap => {
-                todayRevenue = 0;
-                issuesList = [];
-                if(snap.exists()) {
-                    snap.forEach(child => {
-                        const r = child.val();
-                        todayRevenue += (r.cost || 0);
-                        if(r.hasIssue) issuesList.push(`${r.scooter}: ${r.issueReason}`);
-                    });
-                }
-                document.getElementById('totalIncome').innerText = todayRevenue + " ج.م";
+                revenueToday = 0;
+                if(snap.exists()) snap.forEach(c => revenueToday += c.val().cost);
+                document.getElementById('revenueText').innerText = revenueToday;
             });
+        }
 
-            // مراقبة الموظفين
-            db.ref('online_staff').on('value', snap => {
-                const tbody = document.getElementById('staffTableBody');
+        function loadAttendanceLog() {
+            db.ref('attendance').limitToLast(5).once('value', snap => {
+                const tbody = document.getElementById('attTable');
                 tbody.innerHTML = "";
-                let count = 0;
+                snap.forEach(day => {
+                    day.forEach(staff => {
+                        const s = staff.val();
+                        const cls = s.status === 'green' ? 'bg-green' : (s.status === 'orange' ? 'bg-orange' : 'bg-red');
+                        tbody.innerHTML += `<tr>
+                            <td>${staff.key}<br><small>${day.key}</small></td>
+                            <td>${s.checkIn || '-'}</td>
+                            <td>${s.checkOut || '-'}</td>
+                            <td><span class="status-badge ${cls}">${s.status}</span></td>
+                        </tr>`;
+                    });
+                });
+            });
+        }
+
+        function loadHistory(date) {
+            db.ref(`history/${date}`).once('value', snap => {
+                const t = document.getElementById('histTable');
+                t.innerHTML = "";
                 if(snap.exists()) {
-                    snap.forEach(s => {
-                        count++;
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${s.val().name}</td>
-                                <td style="color:#28a745">Online</td>
-                                <td><button onclick="banUser('${s.key}')" style="background:#dc3545; color:white; border:none; padding:5px; border-radius:5px;">طرد</button></td>
-                            </tr>
-                        `;
+                    snap.forEach(c => {
+                        const r = c.val();
+                        t.innerHTML += `<tr><td>${r.scooter}</td><td>${r.client}</td><td>${Math.ceil((r.end-r.start)/60000)}</td><td>${r.cost}</td></tr>`;
                     });
                 }
-                document.getElementById('onlineStaffCount').innerText = count;
             });
         }
 
-        // --- 5. وظائف التشغيل (للجميع) ---
-        function startTrip() {
-            const scooter = document.getElementById('t_scooter').value;
-            const client = document.getElementById('t_name').value;
-            
-            if(!scooter) return alert("اكتب رقم السكوتر");
-            
-            db.ref('active_trips').push({
-                scooter, client, 
-                start: Date.now(),
-                staff: IS_ADMIN ? 'Admin' : 'Staff'
-            });
-            
-            document.getElementById('newTripModal').style.display = 'none';
-        }
-
-        function endTrip(key) {
-            db.ref('active_trips/'+key).once('value', snap => {
-                const t = snap.val();
-                let mins = Math.ceil((Date.now() - t.start)/60000);
-                if(mins < 15) mins = 15; // حد أدنى
-                
-                let cost = mins * 1; // السعر
-                
-                if(confirm(`إنهاء رحلة ${t.scooter}؟\nالمدة: ${mins} دقيقة\nالحساب: ${cost} جنيه`)) {
-                    // ترحيل للتاريخ
-                    const today = new Date().toISOString().split('T')[0];
-                    db.ref(`history/${today}`).push({
-                        ...t, end: Date.now(), cost: cost, duration: mins
-                    });
-                    // حذف من النشط
-                    db.ref('active_trips/'+key).remove();
-                }
+        function loadScooters() {
+            db.ref('scooters').once('value', snap => {
+                const t = document.getElementById('scooterTable');
+                t.innerHTML = "";
+                snap.forEach(s => {
+                    const v = s.val();
+                    const danger = (v.issueCount >= 3) ? 'style="color:red; font-weight:bold;"' : '';
+                    t.innerHTML += `<tr><td>${s.key}</td><td>${v.totalRevenue || 0}</td><td ${danger}>${v.issueCount || 0}</td></tr>`;
+                });
             });
         }
 
-        // --- 6. ذكاء اصطناعي (AI Logic) ---
-        function toggleAI() {
-            const win = document.getElementById('aiWindow');
-            win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+        // --- Helpers ---
+        document.getElementById('hasIssue').addEventListener('change', (e) => {
+            document.getElementById('issueNote').style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        function sendTele(msg) {
+            fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: CHAT_ID, text: msg, parse_mode: 'HTML'})
+            });
         }
 
+        // Haversine Formula for distance
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // metres
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+            document.getElementById('tab-'+id).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // AI Stub
         function askAI() {
-            const input = document.getElementById('aiInput');
-            const q = input.value.toLowerCase();
-            const body = document.getElementById('aiChatBody');
-            
-            if(!q) return;
-
-            // عرض سؤالك
-            body.innerHTML += `<div class="msg-user">${input.value}</div>`;
-            
-            // تحليل وتجهيز الرد
-            let reply = "مش فاهم قصدك، اسألني عن الفلوس أو الاسكوترات.";
-            
-            if(q.includes('دخل') || q.includes('ايراد') || q.includes('كام النهاردة') || q.includes('فلوس')) {
-                reply = `💰 إيراد النهاردة لحد دلوقتي: <b>${todayRevenue} جنيه</b>.`;
-            }
-            else if(q.includes('شغال') || q.includes('رحلة') || q.includes('برة')) {
-                reply = `🛵 حالياً فيه <b>${activeTripsCount}</b> سكوترات مأجرة في الشارع.`;
-            }
-            else if(q.includes('اعطال') || q.includes('عطل') || q.includes('مشاكل')) {
-                if(issuesList.length > 0) reply = `⚠️ فيه مشاكل متسجلة النهاردة:\n- ${issuesList.join('\n- ')}`;
-                else reply = "✅ الحمد لله مفيش أي أعطال اتسجلت النهاردة.";
-            }
-            else if(q.includes('موظف') || q.includes('مين فاتح')) {
-                const count = document.getElementById('onlineStaffCount').innerText;
-                reply = `👥 فيه <b>${count}</b> موظفين فاتحين السيستم دلوقتي.`;
-            }
-
-            // تأخير بسيط لمحاكاة التفكير
+            const q = document.getElementById('aiInput').value;
+            document.getElementById('aiChat').innerHTML += `<div>You: ${q}</div>`;
             setTimeout(() => {
-                body.innerHTML += `<div class="msg-ai">${reply}</div>`;
-                body.scrollTop = body.scrollHeight;
+                let ans = "تحت أمرك، بص في التقارير وهتلاقي الإجابة.";
+                if(q.includes('دخل')) ans = `إيراد النهاردة: ${revenueToday}`;
+                document.getElementById('aiChat').innerHTML += `<div style="color:#ffc107">AI: ${ans}</div>`;
             }, 500);
-
-            input.value = "";
+            document.getElementById('aiInput').value="";
         }
-
-        function logout() { location.reload(); }
-        function banUser(key) { 
-            if(confirm('طرد الموظف ده؟')) db.ref('banned_devices/'+key).set(true); 
-        }
-
     </script>
 </body>
 </html>
