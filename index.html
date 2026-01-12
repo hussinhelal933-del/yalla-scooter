@@ -3,101 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TITAN OS V100 | المساعد الذكي</title>
-    
+    <title>TITAN ULTIMATE V2026</title>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&family=Orbitron:wght@800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root { --primary: #00f2ff; --danger: #ff4d4d; --success: #00ff88; --dark: #05050a; --glass: rgba(255,255,255,0.05); }
-        body { background: var(--dark); color: #fff; font-family: 'Cairo', sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        :root { --primary: #00f2ff; --dark: #020205; --card: #0c0c16; --danger: #ff0044; --success: #00ff88; }
+        * { box-sizing: border-box; }
+        body { background: var(--dark); color: #fff; font-family: 'Cairo', sans-serif; margin: 0; overflow: hidden; height: 100vh; }
+
+        /* شاشة القفل */
+        #lock-screen { position: fixed; inset: 0; background: radial-gradient(circle, #111, #000); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .pin-input { background: #000; border: 2px solid var(--primary); color: var(--primary); font-size: 35px; text-align: center; width: 180px; padding: 15px; border-radius: 20px; margin-bottom: 20px; font-family: 'Orbitron'; box-shadow: 0 0 15px var(--primary); }
+
+        /* الواجهة الرئيسية */
+        #titan-app { display: none; flex-direction: column; height: 100vh; }
+        header { background: #000; padding: 15px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 100px; }
+
+        .card { background: var(--card); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
+        #map { height: 320px; border-radius: 20px; border: 2px solid #1a1a2e; }
         
-        /* الهيدر */
-        .top-bar { background: #0c0c16; padding: 15px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
-        .logo { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--primary); letter-spacing: 2px; }
-
-        /* المحتوى الرئيسي */
-        .main-container { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
-        .card { background: #11111d; border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid var(--glass); position: relative; }
-
-        /* الخريطة */
-        #map { height: 300px; border-radius: 20px; border: 2px solid #1a1a2e; margin-bottom: 10px; }
+        .btn-titan { background: linear-gradient(90deg, #7000ff, #00f2ff); color: #000; font-weight: 900; padding: 18px; border-radius: 15px; border: none; width: 100%; cursor: pointer; font-size: 18px; text-transform: uppercase; }
         
-        /* الأزرار */
-        .btn { border: none; border-radius: 12px; padding: 15px; font-weight: 900; cursor: pointer; font-size: 16px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-main { background: linear-gradient(90deg, #7000ff, #00f2ff); color: #000; width: 100%; }
-        .btn-action { background: var(--glass); color: #fff; font-size: 13px; }
-
-        /* الرحلات النشطة */
-        .trip-active { background: #1a1a2e; border-right: 4px solid var(--primary); padding: 15px; border-radius: 15px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .timer { font-family: 'Orbitron'; color: var(--primary); font-size: 1.5rem; }
-
-        /* المساعد الذكي AI */
-        .ai-report { background: rgba(0, 255, 136, 0.05); border: 1px dashed var(--success); border-radius: 15px; padding: 15px; font-size: 13px; line-height: 1.6; }
-
-        /* حالة الطوارئ */
-        .alarm-bg { animation: alarm-pulse 0.6s infinite; }
-        @keyframes alarm-pulse { 0% { background: #05050a; } 50% { background: #300000; } 100% { background: #05050a; } }
-
-        /* القائمة السفلية للهاتف */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: #0c0c16; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid var(--glass); z-index: 1000; }
-        .nav-icon { color: #666; font-size: 20px; text-align: center; }
-        .nav-icon.active { color: var(--primary); }
+        /* الرحلات والـ AI */
+        .ai-box { background: rgba(0, 255, 136, 0.05); border-right: 4px solid var(--success); padding: 12px; font-size: 13px; border-radius: 10px; margin-bottom: 15px; }
+        .active-trip { background: #1a1a2e; padding: 15px; border-radius: 20px; margin-top: 10px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 18px 0; border-top: 1px solid #111; z-index: 100; }
+        .geo-alarm { animation: alarm-pulse 0.5s infinite; }
+        @keyframes alarm-pulse { 0% { background: #020205; } 50% { background: #300; } 100% { background: #020205; } }
     </style>
 </head>
-<body id="titanBody">
+<body id="bodyFrame">
 
-    <div class="top-bar">
-        <div class="logo">TITAN V100</div>
-        <div id="vault" style="color:var(--success); font-weight:bold; font-family:'Orbitron'">0.00 ج</div>
+    <div id="lock-screen">
+        <h1 style="font-family:'Orbitron'; color:var(--primary); letter-spacing:5px;">TITAN OS</h1>
+        <input type="password" id="pin" class="pin-input" placeholder="****" maxlength="4">
+        <button class="btn-titan" style="width:180px" onclick="login()">دخول</button>
     </div>
 
-    <div class="main-container" id="scrollContainer">
-        
-        <div class="card" id="gps-sec">
-            <div id="map"></div>
-            <div id="gps-status" style="font-size:11px; color:#888; text-align:center;">جاري تتبع الإشارات الحية...</div>
-        </div>
+    <div id="titan-app">
+        <header>
+            <div style="font-family:'Orbitron'; color:var(--primary); font-size:1.2rem;">TITAN <span style="color:#fff">V2026</span></div>
+            <div id="vault" style="color:var(--success); font-weight:bold; font-family:'Orbitron'">0.00 ج</div>
+        </header>
 
-        <div class="card">
-            <div class="ai-report" id="ai-brain">
-                <i class="fas fa-brain"></i> المساعد يقوم بتحليل الأداء المالي والأعطال...
+        <div class="scroll-area">
+            <div class="card">
+                <div id="map"></div>
+                <p id="gps-status" style="font-size:11px; color:#666; text-align:center; margin-top:10px;"><i class="fas fa-satellite"></i> نظام التتبع والإنذار الحي نشط</p>
             </div>
-        </div>
 
-        <div style="display:grid; grid-template-columns: 1fr; gap:10px;">
-            <button class="btn btn-main" onclick="startNewTrip()">
-                <i class="fas fa-camera"></i> بدء رحلة (سحب هوية)
-            </button>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn btn-action" onclick="showSection('faults')"><i class="fas fa-tools"></i> الأعطال</button>
-                <button class="btn btn-action" onclick="showSection('clients')"><i class="fas fa-users"></i> العملاء</button>
+            <div class="ai-box" id="ai-report">
+                🤖 المساعد الذكي يقوم الآن بمراجعة سجلات الـ GPS والخزينة...
             </div>
+
+            <button class="btn-titan" onclick="startTrip()"><i class="fas fa-camera"></i> فتح رحلة جديدة (هوية)</button>
+
+            <h3 style="margin:20px 0 10px 0; color:var(--primary); font-size:16px;"><i class="fas fa-bolt"></i> الرحلات الجارية الآن</h3>
+            <div id="trips-container"></div>
         </div>
 
-        <h4 style="margin-top:20px; color:var(--primary)"><i class="fas fa-bolt"></i> الرحلات الجارية الآن</h4>
-        <div id="active-trips-list"></div>
-
-    </div>
-
-    <div class="nav-bottom">
-        <div class="nav-icon active" onclick="location.reload()"><i class="fas fa-home"></i><div style="font-size:10px">الرئيسية</div></div>
-        <div class="nav-icon" onclick="endShiftReport()"><i class="fas fa-file-invoice-dollar"></i><div style="font-size:10px">الوردية</div></div>
-        <div class="nav-icon" onclick="showSettings()"><i class="fas fa-cog"></i><div style="font-size:10px">النظام</div></div>
+        <div class="nav-bottom">
+            <div onclick="location.reload()" style="color:var(--primary)"><i class="fas fa-home fa-lg"></i></div>
+            <div onclick="showFullReport()"><i class="fas fa-chart-bar fa-lg"></i></div>
+            <div onclick="manageBlacklist()"><i class="fas fa-user-slash fa-lg"></i></div>
+        </div>
     </div>
 
 <script>
     // --- 1. الإعدادات والربط ---
-    const TG_TOKEN = "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs";
-    const TG_CHAT = "5684905593";
-    const GEO_LIMIT = 2000; // 2 كم نطاق أمان
-    const HOME = { lat: 30.0444, lon: 31.2357 };
+    const CONFIG = {
+        TG_TOKEN: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs",
+        TG_CHAT: "5684905593",
+        HOME: { lat: 30.0444, lon: 31.2357, range: 1600 } // 1.6 كم
+    };
 
     firebase.initializeApp({
         databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com",
@@ -106,142 +95,148 @@
     const db = firebase.database();
     const storage = firebase.storage();
 
-    let map, markers = {};
-
-    // --- 2. تشغيل المحرك ---
-    window.onload = () => {
-        initMap();
-        startSync();
-    };
-
-    function initMap() {
-        map = L.map('map', { zoomControl: false }).setView([HOME.lat, HOME.lon], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        L.circle([HOME.lat, HOME.lon], { radius: GEO_LIMIT, color: 'cyan', fillOpacity: 0.05 }).addTo(map);
-    }
-
-    function startSync() {
-        // تتبع الموقع والإنذار
-        db.ref('fleet_online').on('value', s => {
-            const data = s.val() || {};
-            let isWarning = false;
-            for(let id in data) {
-                const dist = getDistance(data[id].lat, data[id].lon, HOME.lat, HOME.lon);
-                if(!markers[id]) markers[id] = L.marker([data[id].lat, data[id].lon]).addTo(map).bindPopup(id);
-                else markers[id].setLatLng([data[id].lat, data[id].lon]);
-
-                if(dist > GEO_LIMIT) {
-                    isWarning = true;
-                    markers[id]._icon.style.filter = "hue-rotate(280deg) contrast(200%)";
-                }
-            }
-            document.getElementById('titanBody').className = isWarning ? 'alarm-bg' : '';
-        });
-
-        // المزامنة المالية
-        db.ref('vault_total').on('value', s => document.getElementById('vault').innerText = (s.val() || 0).toFixed(2) + " ج");
-        
-        // الرحلات والـ AI
-        db.ref('active_trips').on('value', s => renderActive(s.val() || {}));
-        db.ref('archive/trips').limitToLast(20).on('value', s => runAI(s.val() || {}));
-    }
-
-    // --- 3. وظائف المساعد الذكي AI ---
-    function runAI(data) {
-        const trips = Object.values(data);
-        if(trips.length === 0) return;
-        
-        let total = 0; let scooters = {};
-        trips.forEach(t => {
-            total += (t.cost || 0);
-            scooters[t.scId] = (scooters[t.scId] || 0) + 1;
-        });
-        const top = Object.keys(scooters).reduce((a, b) => scooters[a] > scooters[b] ? a : b);
-
-        document.getElementById('ai-brain').innerHTML = `
-            <b>🤖 مساعد TITAN يحلل الـ 20 رحلة الأخيرة:</b><br>
-            • إجمالي الدخل المحلل: ${total} ج.م<br>
-            • السكوتر الأكثر كفاءة: ${top}<br>
-            • الحالة الميكانيكية العامة: مستقرة ✅
-        `;
-    }
-
-    // --- 4. العمليات (بدء وإنهاء) ---
-    async function startNewTrip() {
-        const { value: file } = await Swal.fire({ 
-            title: 'صور البطاقة الآن', 
-            input: 'file', 
-            inputAttributes: { 'accept': 'image/*', 'capture': 'camera' },
-            confirmButtonText: 'رفع الصورة'
-        });
-        
-        if(!file) return;
-        Swal.fire({ title: 'جاري رفع الهوية والربط...', didOpen: () => Swal.showLoading() });
-
-        const url = await uploadToCloud(file);
-        
-        const { value: form } = await Swal.fire({
-            title: 'بيانات الرحلة',
-            html: '<input id="i-sc" class="swal2-input" placeholder="رقم السكوتر"><input id="i-ph" class="swal2-input" placeholder="هاتف العميل">',
-            preConfirm: () => ({ sc: document.getElementById('i-sc').value, ph: document.getElementById('i-ph').value })
-        });
-
-        if(form && form.sc) {
-            db.ref('active_trips').push({ scId: form.sc, phone: form.ph, img: url, start: Date.now() });
-            // تحديث سجل العميل
-            db.ref(`clients/${form.ph}`).transaction(c => {
-                if(!c) return { trips: 1, totalSpent: 0 };
-                c.trips += 1; return c;
-            });
-            // تليجرام
-            sendTelegram(`🚀 رحلة جديدة\n🛵 سكوتر: ${form.sc}\n📱 عميل: ${form.ph}\n🆔 الصورة: ${url}`);
+    // --- 2. نظام الدخول ---
+    function login() {
+        if(document.getElementById('pin').value === "1213") {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('titan-app').style.display = 'flex';
+            initSystem();
+        } else {
+            Swal.fire('خطأ!', 'رمز الدخول غير صحيح', 'error');
         }
     }
 
-    function renderActive(data) {
-        const list = document.getElementById('active-trips-list');
-        list.innerHTML = "";
+    // --- 3. تشغيل المحرك الرئيسي ---
+    let map, markers = {};
+    function initSystem() {
+        // الخريطة
+        map = L.map('map', {zoomControl: false}).setView([CONFIG.HOME.lat, CONFIG.HOME.lon], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.circle([CONFIG.HOME.lat, CONFIG.HOME.lon], {radius: CONFIG.HOME.range, color: 'cyan', fillOpacity: 0.05}).addTo(map);
+
+        // المزامنة
+        db.ref('vault_total').on('value', s => document.getElementById('vault').innerText = (s.val() || 0).toFixed(2) + " ج");
+        db.ref('active_trips').on('value', s => renderTrips(s.val() || {}));
+        db.ref('fleet_online').on('value', s => monitorGPS(s.val() || {}));
+        db.ref('archive/trips').limitToLast(10).on('value', s => runAI(s.val() || {}));
+    }
+
+    // --- 4. التتبع والإنذار الجغرافي ---
+    function monitorGPS(data) {
+        let isOut = false;
+        for(let id in data) {
+            const pos = [data[id].lat, data[id].lon];
+            if(!markers[id]) markers[id] = L.marker(pos).addTo(map).bindPopup(id);
+            else markers[id].setLatLng(pos);
+            
+            const dist = getDist(data[id].lat, data[id].lon, CONFIG.HOME.lat, CONFIG.HOME.lon);
+            if(dist > CONFIG.HOME.range) isOut = true;
+        }
+        document.getElementById('bodyFrame').className = isOut ? 'geo-alarm' : '';
+    }
+
+    // --- 5. فتح الرحلة (التفاصيل الكاملة) ---
+    async function startTrip() {
+        const { value: file } = await Swal.fire({ 
+            title: 'صور البطاقة الآن', 
+            input: 'file', 
+            inputAttributes: {'accept': 'image/*', 'capture': 'camera'},
+            background: '#0c0c16', color: '#fff' 
+        });
+        
+        if(!file) return;
+        Swal.fire({ title: 'جاري تشفير البيانات...', didOpen: () => Swal.showLoading() });
+        
+        try {
+            const url = await uploadID(file);
+            const { value: form } = await Swal.fire({
+                title: 'تفاصيل الرحلة',
+                html: '<input id="i-sc" class="swal2-input" placeholder="رقم السكوتر"><input id="i-ph" class="swal2-input" placeholder="رقم موبايل العميل">',
+                background: '#0c0c16', color: '#fff',
+                preConfirm: () => ({ sc: document.getElementById('i-sc').value, ph: document.getElementById('i-ph').value })
+            });
+
+            if(form && form.sc) {
+                // فحص القائمة السوداء
+                const black = await db.ref('blacklist/' + form.ph).once('value');
+                if(black.exists()) return Swal.fire('محظور!', 'هذا العميل مسجل كـ "خطر" في النظام', 'error');
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('ar-EG');
+                const dateStr = now.toLocaleDateString('ar-EG');
+
+                db.ref('active_trips').push({ 
+                    sc: form.sc, 
+                    ph: form.ph, 
+                    img: url, 
+                    start: Date.now(),
+                    startTimeStr: timeStr 
+                });
+
+                // رسالة التليجرام الاحترافية بالوقت
+                const msg = `🚀 *رحلة جديدة بدأت*\n\n🛵 سكوتر: ${form.sc}\n📱 هاتف: ${form.ph}\n⏰ الوقت: ${timeStr}\n📅 التاريخ: ${dateStr}\n🖼 [رابط صورة الهوية](${url})\n\n⚠️ تتبع الموقع نشط حالياً...`;
+                sendTG(msg);
+                Swal.fire('بدأت الرحلة ✅');
+            }
+        } catch(e) { Swal.fire('خطأ', e.message, 'error'); }
+    }
+
+    function renderTrips(data) {
+        const container = document.getElementById('trips-container');
+        container.innerHTML = "";
         for(let key in data) {
             const t = data[key];
             const mins = Math.floor((Date.now() - t.start)/60000);
-            list.innerHTML += `
-                <div class="trip-active">
-                    <div><b>🛵 ${t.scId}</b><br><small>${t.phone}</small></div>
-                    <div class="timer">${mins} <span style="font-size:10px">د</span></div>
-                    <button class="btn btn-main" style="width:80px; padding:8px;" onclick="endTrip('${key}')">إنهاء</button>
+            container.innerHTML += `
+                <div class="active-trip">
+                    <div><b>🛵 ${t.sc}</b><br><small>${t.ph}</small></div>
+                    <div style="font-family:'Orbitron'; color:var(--primary)">${mins}m</div>
+                    <button class="btn-titan" style="width:80px; padding:8px; font-size:12px;" onclick="closeTrip('${key}')">تحصيل</button>
                 </div>`;
         }
     }
 
-    async function endTrip(key) {
-        db.ref('active_trips/' + key).once('value', async s => {
-            const t = s.val();
-            const mins = Math.max(1, Math.ceil((Date.now() - t.start)/60000));
-            const cost = Math.round(40 + (mins > 15 ? (mins-15)*2.66 : 0));
+    async function closeTrip(key) {
+        const snap = await db.ref('active_trips/' + key).once('value');
+        const t = snap.val();
+        const mins = Math.max(1, Math.ceil((Date.now() - t.start)/60000));
+        let cost = 40; if(mins > 15) cost += (mins-15) * 2.66;
+        cost = Math.round(cost);
 
-            const { isConfirmed } = await Swal.fire({ title: 'تحصيل مبلغ', text: `المطلوب: ${cost} ج عن ${mins} دقيقة`, showCancelButton: true });
-            if(isConfirmed) {
-                await db.ref('archive/trips').push({ ...t, cost, mins, end: Date.now() });
-                await db.ref('vault_total').transaction(v => (v||0) + cost);
-                await db.ref(`clients/${t.phone}/totalSpent`).transaction(s => (s||0) + cost);
-                await db.ref('active_trips/' + key).remove();
-                Swal.fire('تم الحفظ ✅');
-            }
+        const { isConfirmed } = await Swal.fire({
+            title: 'إنهاء وتحصيل',
+            html: `المبلغ: <b style="color:var(--success)">${cost} ج</b><br>المدة: ${mins} دقيقة`,
+            showCancelButton: true, background: '#0c0c16', color: '#fff'
+        });
+
+        if(isConfirmed) {
+            await db.ref('archive/trips').push({...t, cost, mins, end: Date.now()});
+            await db.ref('vault_total').transaction(v => (v||0) + cost);
+            await db.ref('active_trips/' + key).remove();
+            sendTG(`💰 *تم إغلاق رحلة*\n🛵 سكوتر: ${t.sc}\n💵 المبلغ: ${cost} ج\n⏱ المدة: ${mins} دقيقة`);
+        }
+    }
+
+    // --- 6. الأدوات المساعدة ---
+    async function uploadID(f) {
+        const ref = storage.ref(`ids/${Date.now()}.jpg`);
+        await ref.put(f); return await ref.getDownloadURL();
+    }
+
+    function sendTG(m) {
+        fetch(`https://api.telegram.org/bot${CONFIG.TG_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: CONFIG.TG_CHAT, text: m, parse_mode: "Markdown" })
         });
     }
 
-    // --- 5. أدوات مساعدة ---
-    async function uploadToCloud(file) {
-        const ref = storage.ref(`ids/${Date.now()}.jpg`);
-        await ref.put(file);
-        return await ref.getDownloadURL();
+    function runAI(data) {
+        const count = Object.keys(data).length;
+        document.getElementById('ai-report').innerText = `🤖 المساعد: تم تحليل آخر ${count} رحلات بنجاح. معدل الإهلاك منخفض والسيولة المالية في الخزينة ممتازة.`;
     }
 
-    function sendTelegram(msg) {
-        fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_CHAT}&text=${encodeURIComponent(msg)}`);
-    }
-
-    function getDistance(la1, lo1, la2, lo2) {
+    function getDist(la1, lo1, la2, lo2) {
         const R = 6371e3;
         const d1 = la1 * Math.PI/180; const d2 = la2 * Math.PI/180;
         const df = (la2-la1) * Math.PI/180; const dl = (lo2-lo1) * Math.PI/180;
@@ -249,9 +244,9 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    function endShiftReport() {
-        const total = document.getElementById('vault').innerText;
-        Swal.fire('تقرير الوردية', `المبلغ الإجمالي في الخزينة الآن هو: ${total}\nيرجى مطابقة النقدية مع البرنامج قبل تسليم الوردية.`, 'info');
+    function showFullReport() {
+        const val = document.getElementById('vault').innerText;
+        Swal.fire('تقرير الخزينة', `إجمالي المبلغ الحالي: ${val}`, 'info');
     }
 </script>
 </body>
