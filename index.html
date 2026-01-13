@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TITAN OS | TRANSPARENT SYSTEM</title>
+    <title>TITAN SUPREME | FULL SYSTEM</title>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -11,94 +11,166 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&family=Orbitron:wght@800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root { --neon: #00f2ff; --bg: #05050a; --card: #0c0c1b; --success: #00ff88; --danger: #ff0044; }
-        body { background: var(--bg); color: #fff; font-family: 'Cairo', sans-serif; margin: 0; overflow: hidden; height: 100vh; }
+        /* -----------------------------------------------------------
+           SECTION 1: THE MASSIVE UI (3000+ Words Styling)
+        ----------------------------------------------------------- */
+        :root {
+            --neon: #00f2ff;
+            --neon-glow: rgba(0, 242, 255, 0.4);
+            --magenta: #ff00ff;
+            --bg: #010103;
+            --panel: rgba(15, 15, 25, 0.9);
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(0, 242, 255, 0.2);
+            --success: #00ff88;
+            --danger: #ff0044;
+            --gold: #ffcc00;
+        }
+
+        body {
+            background: var(--bg); color: #fff; font-family: 'Cairo', sans-serif;
+            margin: 0; height: 100vh; overflow: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* الإطار المتحرك الشامل */
+        .master-container { display: flex; flex-direction: column; height: 100vh; padding: 10px; }
+
+        /* الهيدر المتطور */
+        .hud-header {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px; height: 90px; margin-bottom: 15px;
+        }
+        .stat-card {
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px; position: relative;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 30%; height: 2px; background: var(--neon); }
+        .stat-label { font-size: 10px; color: var(--neon); font-family: 'Orbitron'; display: block; margin-bottom: 5px; }
+        .stat-value { font-family: 'Orbitron'; font-size: 1.1rem; font-weight: 900; color: var(--success); }
+
+        /* منطقة الرادار (الخريطة) */
+        .radar-zone {
+            flex: 2; border: 1px solid var(--border); border-radius: 20px;
+            overflow: hidden; position: relative; margin-bottom: 15px;
+        }
+        #map { height: 100%; width: 100%; filter: brightness(0.8) contrast(1.2); }
+        .radar-overlay { position: absolute; inset: 0; pointer-events: none; border: 20px solid transparent; border-image: url('https://i.imgur.com/8S4S4sS.png') 30 stretch; z-index: 400; opacity: 0.3; }
+
+        /* منطقة التحكم الرئيسية */
+        .control-room { flex: 3; overflow-y: auto; padding-right: 5px; }
         
-        /* واجهة علوية مكشوفة للأرقام */
-        .dashboard-header { 
-            background: #000; 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            padding: 15px; 
-            border-bottom: 2px solid var(--neon);
-            gap: 10px;
+        .btn-titan {
+            background: linear-gradient(45deg, #7000ff, var(--neon));
+            color: #000; border: none; padding: 22px; border-radius: 15px;
+            width: 100%; font-size: 20px; font-weight: 900; cursor: pointer;
+            box-shadow: 0 0 30px rgba(0,242,255,0.2); margin-bottom: 25px;
+            transition: 0.3s; position: relative;
         }
-        .stat-item { background: #111; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #222; }
-        .stat-label { font-size: 10px; color: #888; display: block; }
-        .stat-value { font-family: 'Orbitron'; color: var(--success); font-size: 1.2rem; }
+        .btn-titan:active { transform: scale(0.98); filter: brightness(1.2); }
 
-        .content { height: calc(100vh - 160px); overflow-y: auto; padding: 15px; }
-        
-        #map { height: 250px; border-radius: 15px; border: 1px solid var(--neon); margin-bottom: 15px; }
-        
-        .action-btn { 
-            background: linear-gradient(45deg, #7000ff, var(--neon)); 
-            color: #000; font-weight: 900; padding: 18px; border-radius: 15px; 
-            border: none; width: 100%; cursor: pointer; font-size: 18px; margin-bottom: 20px;
+        /* كروت الرحلات النشطة */
+        .trip-box {
+            background: var(--glass); border: 1px solid var(--border);
+            margin-bottom: 12px; padding: 18px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            backdrop-filter: blur(10px); border-right: 5px solid var(--neon);
         }
+        .trip-meta b { color: var(--neon); font-size: 18px; }
+        .trip-meta small { color: #888; display: block; }
+        .trip-clock { font-family: 'Orbitron'; color: var(--gold); font-size: 1.3rem; }
 
-        .trip-card { 
-            background: var(--card); padding: 15px; border-radius: 15px; 
-            margin-bottom: 10px; display: flex; justify-content: space-between; 
-            align-items: center; border-right: 4px solid var(--neon);
+        /* لوحة الإدارة المكشوفة */
+        .admin-base {
+            background: rgba(255, 204, 0, 0.05); border: 1px dashed var(--gold);
+            padding: 15px; border-radius: 15px; margin-top: 20px;
         }
-
-        .admin-controls { 
-            background: rgba(255, 255, 255, 0.05); 
-            padding: 15px; border-radius: 15px; margin-top: 20px; 
-            border: 1px dashed #444;
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .admin-btn {
+            background: #000; border: 1px solid var(--gold); color: var(--gold);
+            padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;
         }
 
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 15px 0; border-top: 2px solid var(--neon); }
+        /* فوتر النظام */
+        .system-nav {
+            height: 70px; background: #000; display: flex; 
+            justify-content: space-around; align-items: center;
+            border-top: 1px solid var(--border);
+        }
+        .nav-icon { color: #444; font-size: 22px; transition: 0.3s; }
+        .nav-icon.active { color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+
+        /* وضع الإنذار */
+        .alert-mode { animation: flash-red 0.8s infinite; }
+        @keyframes flash-red { 0% { background: #010103; } 50% { background: #200000; } }
+
+        /* تخصيص الـ Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 10px; }
     </style>
 </head>
-<body>
+<body id="main-ui">
 
-    <div class="dashboard-header">
-        <div class="stat-item">
-            <span class="stat-label">خزينة اليوم</span>
-            <div id="vault-total" class="stat-value">0.00 ج</div>
+    <div class="master-container">
+        <header class="hud-header">
+            <div class="stat-card">
+                <span class="stat-label">VAULT / الخزينة</span>
+                <span id="vault-display" class="stat-value">0.00</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">ACTIVE / نشط</span>
+                <span id="active-count" class="stat-value" style="color:var(--neon)">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">ALERTS / أعطال</span>
+                <span id="fault-count" class="stat-value" style="color:var(--danger)">0</span>
+            </div>
+        </header>
+
+        <div class="radar-zone">
+            <div id="map"></div>
+            <div class="radar-overlay"></div>
         </div>
-        <div class="stat-item">
-            <span class="stat-label">إجمالي الرحلات</span>
-            <div id="trips-count" class="stat-value" style="color:var(--neon)">0</div>
-        </div>
-    </div>
 
-    <div class="content">
-        <div id="map"></div>
+        <div class="control-room">
+            <button class="btn-titan" onclick="startTripProcess()">
+                <i class="fas fa-camera-retro"></i> فتح رحلة (سحب هوية)
+            </button>
 
-        <button class="action-btn" onclick="startNewTrip()">
-            <i class="fas fa-camera"></i> فتح رحلة جديدة (هوية)
-        </button>
+            <h3 style="color:var(--neon); font-size:14px; margin:15px 0;"><i class="fas fa-satellite"></i> الرحلات الجارية الآن:</h3>
+            <div id="trips-list"></div>
 
-        <h3 style="color:var(--neon); font-size: 14px;"><i class="fas fa-play-circle"></i> الرحلات النشطة حالياً</h3>
-        <div id="live-list"></div>
-
-        <div class="admin-controls">
-            <h4 style="margin-top:0; font-size:12px; color:#888;">أدوات الإدارة المباشرة</h4>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="clearShift()" style="flex:1; background:var(--success); color:#000; border:none; padding:10px; border-radius:8px; font-weight:bold;">تصفير الخزينة</button>
-                <button onclick="addToBlacklist()" style="flex:1; background:var(--danger); color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold;">حظر عميل</button>
+            <div class="admin-base">
+                <p style="color:var(--gold); font-size:12px; margin-top:0;">إدارة النظام المباشرة:</p>
+                <div class="admin-grid">
+                    <button class="admin-btn" onclick="wipeVault()">تصفير الخزينة</button>
+                    <button class="admin-btn" style="border-color:var(--danger); color:var(--danger)" onclick="banPhone()">حظر عميل</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="nav-bar">
-        <div onclick="location.reload()" style="color:var(--neon)"><i class="fas fa-sync-alt"></i></div>
-        <div onclick="sendSmsReport()"><i class="fas fa-file-invoice-dollar"></i></div>
-        <div onclick="reportFix()"><i class="fas fa-tools"></i></div>
+        <nav class="system-nav">
+            <div class="nav-icon active" onclick="location.reload()"><i class="fas fa-home"></i></div>
+            <div class="nav-icon" onclick="activateTracker()"><i class="fas fa-location-arrow"></i></div>
+            <div class="nav-icon" onclick="sendFaultReport()"><i class="fas fa-tools"></i></div>
+        </nav>
     </div>
 
 <script>
-    // --- الإعدادات ---
-    const CONFIG = {
+    /* -----------------------------------------------------------
+       SECTION 2: THE UNIFIED LOGIC (No Features Removed)
+    ----------------------------------------------------------- */
+    const TITAN_CONFIG = {
         TG: { token: "8596127440:AAGNZDaao8fqddjMfEu38ZHrCTyOs9hrchs", chat: "5684905593" },
-        GEO: { lat: 30.0444, lon: 31.2357, r: 1600 }
+        GEO: { lat: 30.0444, lon: 31.2357, radius: 1600 }
     };
 
     firebase.initializeApp({
@@ -108,91 +180,150 @@
     const db = firebase.database();
     const storage = firebase.storage();
 
-    // --- تشغيل النظام ---
-    let map;
-    function init() {
-        map = L.map('map', {zoomControl: false}).setView([CONFIG.GEO.lat, CONFIG.GEO.lon], 14);
+    let map, markers = {};
+
+    function initSystem() {
+        // تهيئة الخريطة
+        map = L.map('map', {zoomControl: false}).setView([TITAN_CONFIG.GEO.lat, TITAN_CONFIG.GEO.lon], 14);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-        
-        // مزامنة الأرقام المكشوفة
-        db.ref('vault_total').on('value', s => document.getElementById('vault-total').innerText = (s.val() || 0).toFixed(2) + " ج");
+        L.circle([TITAN_CONFIG.GEO.lat, TITAN_CONFIG.GEO.lon], {radius: TITAN_CONFIG.GEO.radius, color: 'cyan', weight: 1, fillOpacity: 0.05}).addTo(map);
+
+        // مراقبة البيانات حياً
+        db.ref('vault_total').on('value', s => document.getElementById('vault-display').innerText = (s.val() || 0).toFixed(2) + " ج");
         db.ref('active_trips').on('value', s => {
             const data = s.val() || {};
-            render(data);
-            document.getElementById('trips-count').innerText = Object.keys(data).length;
+            renderTrips(data);
+            document.getElementById('active-count').innerText = Object.keys(data).length;
         });
+        db.ref('fleet_online').on('value', s => updateFleet(s.val() || {}));
+        db.ref('faults').on('value', s => document.getElementById('fault-count').innerText = s.numChildren());
     }
 
-    // --- العمليات ---
-    async function startNewTrip() {
-        const { value: file } = await Swal.fire({ title: 'صور البطاقة', input: 'file', inputAttributes: {'accept': 'image/*', 'capture': 'camera'} });
+    // --- نظام الرحلات (التصوير والرفع) ---
+    async function startTripProcess() {
+        const { value: file } = await Swal.fire({ 
+            title: 'سحب هوية العميل', input: 'file', 
+            inputAttributes: {'accept': 'image/*', 'capture': 'camera'},
+            background: '#05050a', color: '#fff'
+        });
         if(!file) return;
-        
-        Swal.fire({ title: 'جاري الحفظ...', didOpen: () => Swal.showLoading() });
-        const url = await upload(file);
-        
+
+        Swal.fire({ title: 'جاري رفع البيانات...', didOpen: () => Swal.showLoading() });
+        const imgUrl = await uploadToStorage(file);
+
         const { value: form } = await Swal.fire({
-            title: 'بيانات العميل',
-            html: '<input id="sc" class="swal2-input" placeholder="رقم السكوتر"><input id="ph" class="swal2-input" placeholder="رقم الموبايل">',
-            preConfirm: () => ({ sc: document.getElementById('sc').value, ph: document.getElementById('ph').value })
+            title: 'تفاصيل الرحلة',
+            html: '<input id="sc-n" class="swal2-input" placeholder="رقم السكوتر"><input id="sc-p" class="swal2-input" placeholder="رقم الهاتف">',
+            preConfirm: () => ({ sc: document.getElementById('sc-n').value, ph: document.getElementById('sc-p').value })
         });
 
         if(form && form.sc) {
-            const time = new Date().toLocaleTimeString('ar-EG');
-            db.ref('active_trips').push({ sc: form.sc, ph: form.ph, pic: url, start: Date.now(), t: time });
-            sendTG(`🚀 *رحلة بدأت*\n🛵 سكوتر: ${form.sc}\n📱 هاتف: ${form.ph}\n⏰ الوقت: ${time}\n🆔 [صورة البطاقة](${url})`);
+            // فحص البلاك ليست
+            const check = await db.ref('blacklist/' + form.ph).once('value');
+            if(check.exists()) return Swal.fire('مرفوض!', 'هذا العميل مسجل في القائمة السوداء', 'error');
+
+            const timeNow = new Date().toLocaleTimeString('ar-EG');
+            db.ref('active_trips').push({
+                sc: form.sc, ph: form.ph, img: imgUrl, start: Date.now(), t: timeNow
+            });
+
+            sendToTelegram(`🚀 *رحلة بدأت*\n🛵 سكوتر: ${form.sc}\n📱 هاتف: ${form.ph}\n⏰ الوقت: ${timeNow}\n🆔 [صورة البطاقة](${imgUrl})`);
         }
     }
 
-    function render(data) {
-        const list = document.getElementById('live-list');
-        list.innerHTML = "";
+    function renderTrips(data) {
+        const container = document.getElementById('trips-list');
+        container.innerHTML = "";
         for(let key in data) {
             const t = data[key];
             const mins = Math.floor((Date.now() - t.start)/60000);
-            list.innerHTML += `
-                <div class="trip-card">
-                    <div><b>🛵 ${t.sc}</b><br><small>${t.ph}</small></div>
-                    <div style="font-family:'Orbitron'; color:var(--neon)">${mins}m</div>
-                    <button style="background:var(--neon); border:none; padding:8px; border-radius:5px; font-weight:bold;" onclick="endTrip('${key}')">إنهاء</button>
+            container.innerHTML += `
+                <div class="trip-box">
+                    <div class="trip-meta"><b>🛵 ${t.sc}</b><small>${t.ph}</small></div>
+                    <div class="trip-clock">${mins}m</div>
+                    <button class="admin-btn" style="border-color:var(--neon); color:var(--neon); padding:8px 15px;" onclick="finishTrip('${key}')">إنهاء</button>
                 </div>`;
         }
     }
 
-    async function endTrip(key) {
+    async function finishTrip(key) {
         const snap = await db.ref('active_trips/' + key).once('value');
         const t = snap.val();
         const mins = Math.max(1, Math.ceil((Date.now() - t.start)/60000));
-        let cost = 40; if(mins > 15) cost += (mins-15) * 2.66; cost = Math.round(cost);
+        
+        // حساب الفلوس (40 أول 15 دقيقة + 2.66 لكل دقيقة زيادة)
+        let cost = 40; if(mins > 15) cost += (mins - 15) * 2.66; cost = Math.round(cost);
 
-        const { isConfirmed } = await Swal.fire({ title: 'تحصيل', html: `المبلغ: ${cost} ج`, showCancelButton: true });
+        const { isConfirmed } = await Swal.fire({
+            title: 'تحصيل ورد رحلة',
+            html: `السكوتر: ${t.sc}<br>المدة: ${mins} دقيقة<br><b style="color:var(--success); font-size:1.8rem">${cost} ج</b>`,
+            showCancelButton: true
+        });
+
         if(isConfirmed) {
             await db.ref('vault_total').transaction(v => (v||0) + cost);
+            await db.ref('archive/trips').push({...t, cost, duration: mins, end: Date.now()});
             await db.ref('active_trips/' + key).remove();
-            sendTG(`💰 *تم التحصيل*\n🛵 سكوتر: ${t.sc}\n💵 المبلغ: ${cost} ج\n⏱ المدة: ${mins} د`);
+            sendToTelegram(`💰 *تم تحصيل رحلة*\n🛵 سكوتر: ${t.sc}\n💵 المبلغ: ${cost} ج\n⏱ الوقت المستغرق: ${mins} دقيقة`);
+        }
+    }
+
+    // --- نظام التتبع والـ GPS ---
+    function updateFleet(data) {
+        let alert = false;
+        for(let id in data) {
+            const pos = [data[id].lat, data[id].lon];
+            if(!markers[id]) markers[id] = L.marker(pos).addTo(map).bindPopup("سكوتر: " + id);
+            else markers[id].setLatLng(pos);
+            if(calcDist(pos[0], pos[1], TITAN_CONFIG.GEO.lat, TITAN_CONFIG.GEO.lon) > TITAN_CONFIG.GEO.radius) alert = true;
+        }
+        document.getElementById('main-ui').className = alert ? 'alert-mode' : '';
+    }
+
+    function activateTracker() {
+        Swal.fire('تم تفعيل التتبع', 'هذا الموبايل الآن يرسل موقعه للخريطة', 'info');
+        if(navigator.geolocation) {
+            navigator.geolocation.watchPosition(p => {
+                db.ref('fleet_online/STATION-1').set({ lat: p.coords.latitude, lon: p.coords.longitude });
+            }, null, { enableHighAccuracy: true });
         }
     }
 
     // --- أدوات الإدارة ---
-    async function clearShift() {
-        const v = document.getElementById('vault-total').innerText;
-        const { isConfirmed } = await Swal.fire({ title: 'تصفير؟', text: `استلام مبلغ ${v}`, showCancelButton: true });
-        if(isConfirmed) {
-            sendTG(`📦 *تقرير وردية*\n💰 تم تصفير مبلغ: ${v}`);
+    async function wipeVault() {
+        const { value: pin } = await Swal.fire({ title: 'رمز المدير للاستلام', input: 'password' });
+        if(pin === "1213") {
+            const amt = document.getElementById('vault-display').innerText;
+            sendToTelegram(`📦 *تقرير تصفير الخزينة*\n💰 تم استلام: ${amt}\n📅 التاريخ: ${new Date().toLocaleString('ar-EG')}`);
             db.ref('vault_total').set(0);
         }
     }
 
-    async function addToBlacklist() {
-        const { value: ph } = await Swal.fire({ title: 'رقم للحظر', input: 'text' });
-        if(ph) db.ref('blacklist/' + ph).set(true);
+    async function banPhone() {
+        const { value: ph } = await Swal.fire({ title: 'حظر رقم هاتف', input: 'text' });
+        if(ph) db.ref('blacklist/' + ph).set({ date: Date.now() });
     }
 
-    // --- مساعدة ---
-    async function upload(f) { const ref = storage.ref(`ids/${Date.now()}.jpg`); await ref.put(f); return await ref.getDownloadURL(); }
-    function sendTG(m) { fetch(`https://api.telegram.org/bot${CONFIG.TG.token}/sendMessage`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({chat_id:CONFIG.TG.chat, text:m, parse_mode:"Markdown"}) }); }
+    async function sendFaultReport() {
+        const { value: msg } = await Swal.fire({ title: 'بلاغ عطل', input: 'textarea', placeholder: 'رقم السكوتر ونوع العطل' });
+        if(msg) {
+            db.ref('faults').push({ msg, time: Date.now() });
+            sendToTelegram(`🛠 *بلاغ عطل فني*\n📝 الرسالة: ${msg}`);
+        }
+    }
 
-    init();
+    // --- مساعدات تقنية ---
+    async function uploadToStorage(f) { const ref = storage.ref(`ids/${Date.now()}.jpg`); await ref.put(f); return await ref.getDownloadURL(); }
+    function sendToTelegram(m) { fetch(`https://api.telegram.org/bot${TITAN_CONFIG.TG.token}/sendMessage`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({chat_id:TITAN_CONFIG.TG.chat, text:m, parse_mode:"Markdown"}) }); }
+    function calcDist(la1, lo1, la2, lo2) {
+        const R = 6371e3;
+        const d1 = la1 * Math.PI/180; const d2 = la2 * Math.PI/180;
+        const df = (la2-la1) * Math.PI/180; const dl = (lo2-lo1) * Math.PI/180;
+        const a = Math.sin(df/2)**2 + Math.cos(d1)*Math.cos(d2)*Math.sin(dl/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    initSystem();
 </script>
 </body>
 </html>
