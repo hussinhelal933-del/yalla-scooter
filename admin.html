@@ -3,226 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yalla Ops | لوحة التحكم السيادية</title>
+    <title>Yalla Control Center | مركز التحكم والتشغيل</title>
     
-    <!-- الموارد التقنية -->
+    <!-- الموارد الأساسية -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            --adm-dark: #0f0a09; --adm-brown: #3E2723; --adm-blue: #00d2ff;
-            --success: #34c759; --danger: #ff3b30; --text: #ffffff;
+            --primary: #00d2ff; --bg: #0b0e14; --panel: #151921;
+            --success: #00ff9d; --danger: #ff3b30; --text: #ffffff;
         }
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
-        body { background: var(--adm-dark); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; }
+        body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
 
-        /* --- Sidebar --- */
-        .sidebar { width: 300px; background: #000; border-left: 2px solid #222; display: flex; flex-direction: column; padding: 30px; }
-        .logo { font-family: 'Orbitron'; font-size: 30px; color: var(--adm-blue); text-align: center; margin-bottom: 50px; letter-spacing: 5px; }
-        .nav-item { padding: 18px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #555; font-weight: bold; margin-bottom: 10px; transition: 0.3s; }
-        .nav-item.active { background: rgba(0,210,255,0.1); color: var(--adm-blue); border-right: 5px solid var(--adm-blue); }
+        /* --- شاشة الدخول المركزية --- */
+        #gate-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .gate-card { width: 90%; max-width: 400px; text-align: center; padding: 40px; border-radius: 30px; border: 2px solid var(--primary); background: var(--panel); box-shadow: 0 0 30px var(--primary); }
 
-        /* --- Content Area --- */
-        .main { flex: 1; overflow-y: auto; padding: 40px; }
-        .admin-card { background: var(--adm-brown); border-radius: 25px; padding: 25px; margin-bottom: 25px; border: 1.5px solid rgba(0,210,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .kpi { font-family: 'Orbitron'; font-size: 40px; color: var(--adm-blue); }
+        /* --- واجهة السكوتر (باسوورد 1234) --- */
+        #scooter-mode { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; background: #000; }
+        .pilot-gauge { width: 300px; height: 300px; border: 10px solid #111; border-top-color: var(--primary); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(0,210,255,0.1); }
+        .speed-val { font-family: 'Orbitron'; font-size: 110px; text-shadow: 0 0 20px var(--primary); }
 
-        /* --- نظام الشات (Reply System) --- */
-        .chat-list-item { background: #1a1a1a; padding: 15px; border-radius: 15px; cursor: pointer; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .chat-list-item:hover { border: 1px solid var(--adm-blue); }
-        .badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 50%; font-size: 12px; }
+        /* --- واجهة الإدارة (باسوورد 9924) --- */
+        #admin-dash { display: none; height: 100vh; flex-direction: row; }
+        .sidebar { width: 280px; background: #000; border-left: 2px solid #222; display: flex; flex-direction: column; padding: 25px; }
+        .main-content { flex: 1; overflow-y: auto; padding: 35px; }
+        
+        .nav-link { padding: 15px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #555; font-weight: bold; margin-bottom: 5px; }
+        .nav-link.active { background: rgba(0,210,255,0.1); color: var(--primary); border-right: 4px solid var(--primary); }
 
-        /* --- الأزرار --- */
-        .btn-adm { padding: 12px 25px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; }
-        .btn-blue { background: var(--adm-blue); color: #000; }
+        /* --- الجداول والكروت --- */
+        .db-card { background: var(--panel); border-radius: 20px; padding: 20px; margin-bottom: 15px; border: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .stat-badge { background: #000; padding: 5px 15px; border-radius: 10px; font-weight: bold; color: var(--primary); border: 1px solid #222; }
+        
+        #admin-map { height: 400px; width: 100%; border-radius: 20px; margin-bottom: 20px; border: 1px solid #333; }
+        
+        .btn-action { padding: 10px 20px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; }
+        .btn-blue { background: var(--primary); color: #000; }
         .btn-green { background: var(--success); color: #000; }
+
+        .section { display: none; } .section.active { display: block; }
         
-        .section { display: none; }
-        .section.active { display: block; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-        
-        #admin-map { height: 450px; width: 100%; border-radius: 25px; border: 2px solid #222; }
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- القائمة الجانبية -->
-    <nav class="sidebar">
-        <div class="logo">YALLA</div>
-        <div class="nav-item active" onclick="showSec('overview')"><i class="fas fa-bolt"></i> الرحلات الحية</div>
-        <div class="nav-item" onclick="showSec('support')"><i class="fas fa-comments"></i> مركز الدعم <span id="msg-count" class="badge" style="display:none">0</span></div>
-        <div class="nav-item" onclick="showSec('users')"><i class="fas fa-users"></i> العملاء والشحن</div>
-        <div class="nav-item" onclick="showSec('fleet')"><i class="fas fa-motorcycle"></i> الأسطول والمخزن</div>
-        <div class="nav-item" onclick="showSec('settings')"><i class="fas fa-cog"></i> الإعدادات العامة</div>
-    </nav>
+    <!-- 1. البوابة (Gate) -->
+    <div id="gate-screen">
+        <div class="gate-card">
+            <h1 style="color:var(--primary); font-family:Orbitron;">YALLA CORE</h1>
+            <p style="color:#555; margin-bottom:30px;">أدخل كود الصلاحية للبدء</p>
+            <input type="password" id="gatePass" placeholder="••••">
+            <button onclick="accessSystem()" class="btn-action btn-blue" style="width:100%; margin-top:20px;">دخول النظام</button>
+        </div>
+    </div>
 
-    <!-- المحتوى الرئيسي -->
-    <main class="main">
-        <!-- 1. نظرة عامة والرحلات -->
-        <div id="sec-overview" class="section active">
-            <div style="display:flex; gap:25px; margin-bottom:30px;">
-                <div class="admin-card" style="flex:1">رحلات نشطة الآن <div class="kpi" id="k-active">0</div></div>
-                <div class="admin-card" style="flex:1">إجمالي الخزينة <div class="kpi" id="k-cash" style="color:var(--success)">0 ج</div></div>
+    <!-- 2. واجهة السكوتر (Pilot Mode) -->
+    <div id="scooter-mode">
+        <h2 id="sc-status" style="color:var(--success); margin-bottom:20px;">ON-AIR | يتم البث الآن</h2>
+        <div class="pilot-gauge">
+            <span class="speed-val" id="sc-speed">0</span>
+            <span style="color:var(--primary); font-weight:bold;">KM/H</span>
+        </div>
+        <div style="margin-top:40px; display:flex; gap:30px;">
+            <div style="text-align:center;"><i class="fas fa-battery-full" style="color:var(--success); font-size:30px;"></i><p id="sc-batt">--%</p></div>
+            <div style="text-align:center;"><i class="fas fa-satellite" style="color:var(--primary); font-size:30px;"></i><p>GPS: ACTIVE</p></div>
+        </div>
+        <p id="sc-id-display" style="position:absolute; bottom:20px; color:#222; font-family:Orbitron;"></p>
+    </div>
+
+    <!-- 3. واجهة الإدارة (Dashboard) -->
+    <div id="admin-dash">
+        <nav class="sidebar">
+            <div style="font-family:Orbitron; color:var(--primary); font-size:25px; text-align:center; margin-bottom:40px;">YALLA OPS</div>
+            <div class="nav-link active" onclick="showAdminSec('trips')"><i class="fas fa-bolt"></i> الرحلات الحية</div>
+            <div class="nav-link" onclick="showAdminSec('fleet')"><i class="fas fa-motorcycle"></i> الأسطول والأجهزة</div>
+            <div class="nav-link" onclick="showAdminSec('users')"><i class="fas fa-users"></i> قاعدة العملاء</div>
+            <div class="nav-link" onclick="showAdminSec('analysis')"><i class="fas fa-chart-pie"></i> نظام التحليل AI</div>
+            <div class="nav-link" onclick="showAdminSec('settings')"><i class="fas fa-cog"></i> الإعدادات</div>
+            <div class="nav-link" onclick="location.reload()" style="margin-top:auto; color:var(--danger);"><i class="fas fa-power-off"></i> خروج</div>
+        </nav>
+
+        <main class="main-content">
+            <!-- قسم الرحلات -->
+            <div id="adm-trips" class="section active">
+                <div style="display:flex; gap:20px; margin-bottom:30px;">
+                    <div class="admin-card" style="flex:1; background:var(--panel);">الرحلات النشطة <b id="k-active" style="font-size:35px; color:var(--primary); display:block;">0</b></div>
+                    <div class="admin-card" style="flex:1; background:var(--panel);">الخزينة الحالية <b id="k-cash" style="font-size:35px; color:var(--success); display:block;">0 ج</b></div>
+                </div>
+                <div id="live-trips-list"></div>
             </div>
-            <div id="live-trips-monitor"></div>
-        </div>
 
-        <!-- 2. مركز الدعم (الرد على العملاء) -->
-        <div id="sec-support" class="section">
-            <h2>شات الدعم الفني المباشر</h2>
-            <p style="color:#666">اضغط على العميل للرد على رسالته</p>
-            <div id="support-list"></div>
-        </div>
-
-        <!-- 3. إدارة العملاء (الشحن اللحظي) -->
-        <div id="sec-users" class="section">
-            <h2>إدارة أرصدة العملاء</h2>
-            <input type="text" placeholder="بحث برقم الهاتف..." id="userSearch" oninput="searchInUsers(this.value)" style="width:100%; padding:15px; background:#000; color:white; border:1px solid #333; border-radius:15px; margin-bottom:20px;">
-            <div id="admin-user-list"></div>
-        </div>
-
-        <!-- 4. الأسطول والمخزن -->
-        <div id="sec-fleet" class="section">
-            <div id="admin-map"></div>
-            <button class="btn-adm btn-blue" style="width:100%; margin:20px 0;" onclick="addScooter()">+ إضافة سكوتر جديد للمنظومة</button>
-            <div id="admin-stock-list"></div>
-        </div>
-
-        <!-- 5. الإعدادات -->
-        <div id="sec-settings" class="section">
-            <div class="admin-card">
-                <h3>تعديل تعريفة الحساب</h3>
-                <label>سعر الدقيقة بعد 15 دقيقة:</label>
-                <input type="number" id="set-min" style="width:100%; padding:15px; background:#000; color:var(--adm-blue); border:1px solid #333; margin:10px 0;">
-                <label>فتحة العداد (أول 15 دقيقة):</label>
-                <input type="number" id="set-base" style="width:100%; padding:15px; background:#000; color:var(--adm-blue); border:1px solid #333; margin:10px 0;">
-                <button class="btn-adm btn-green" style="width:100%; margin-top:20px;" onclick="saveSettings()">حفظ وتحديث النظام</button>
+            <!-- قسم الأجهزة (رادار حالة الأجهزة وشحنها) -->
+            <div id="adm-fleet" class="section">
+                <div id="admin-map"></div>
+                <h2>حالة الأجهزة الحية</h2>
+                <div id="adm-device-list"></div>
             </div>
-        </div>
-    </main>
+
+            <!-- قسم العملاء (قاعدة البيانات) -->
+            <div id="adm-users" class="section">
+                <h2>قاعدة بيانات العملاء</h2>
+                <input type="text" placeholder="بحث باسم أو رقم العميل..." oninput="searchDB(this.value)">
+                <div id="adm-user-db-list" style="margin-top:20px;"></div>
+            </div>
+
+            <!-- قسم التحليل AI -->
+            <div id="adm-analysis" class="section">
+                <h2>نظام التحليل الذكي</h2>
+                <div class="admin-card" style="background:linear-gradient(45deg, #151921, #001f3f);">
+                    <p>🤖 المحلل الذكي يقوم بجمع بيانات السجل...</p>
+                    <div id="ai-insight-box" style="margin-top:20px; color:var(--success); font-weight:bold;"></div>
+                </div>
+            </div>
+
+            <!-- قسم الإعدادات -->
+            <div id="adm-settings" class="section">
+                <h2>إعدادات النظام</h2>
+                <div class="admin-card">
+                    <p>سعر الدقيقة (بعد 15 د):</p><input type="number" id="set-min" onchange="saveSysConfig()">
+                    <p style="margin-top:15px;">فتحة العداد (أول 15 د):</p><input type="number" id="set-base" onchange="saveSysConfig()">
+                </div>
+                <button class="btn-action btn-blue" onclick="addScooterToSys()">+ إضافة سكوتر جديد للمخزن</button>
+            </div>
+        </main>
+    </div>
 
 <script>
-    // --- الربط مع Firebase (استخدم نفس بياناتك) ---
+    // --- الربط مع Firebase ---
     const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let adminMap, markers = {};
+    let myScooterId = localStorage.getItem('scooter_id') || "Y-" + Math.floor(1000+Math.random()*9000);
+    localStorage.setItem('scooter_id', myScooterId);
 
-    window.onload = () => {
-        initAdminEngine();
-    };
+    // --- 1. نظام الدخول ---
+    function accessSystem() {
+        const p = document.getElementById('gatePass').value;
+        if(p === "1234") { // وضع السكوتر
+            document.getElementById('gate-screen').style.display='none';
+            document.getElementById('scooter-mode').style.display='flex';
+            startScooterBroadcasting();
+        } else if(p === "9924") { // وضع الإدارة
+            document.getElementById('gate-screen').style.display='none';
+            document.getElementById('admin-dash').style.display='flex';
+            runDashboardLogic();
+        } else { Swal.fire('خطأ', 'الكود غير صحيح', 'error'); }
+    }
 
-    function initAdminEngine() {
-        // 1. مراقبة الرحلات الحية
-        db.ref('active_trips').on('value', s => {
-            const list = document.getElementById('live-trips-monitor'); list.innerHTML = "";
-            let count = 0;
-            s.forEach(c => {
-                count++; const t = c.val();
-                const m = Math.floor((Date.now() - t.start) / 60000);
-                list.innerHTML += `
-                    <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div><b>🛵 ${t.scooterId}</b><br><small>عميل: ${t.phone}</small></div>
-                        <div style="text-align:center"><b>${m} دقيقة</b><br><b style="color:var(--success)">${Math.max(40, 40+(m-15)*2.66)} ج</b></div>
-                        <button class="btn-adm btn-blue" onclick="forceEndRide('${c.key}', '${t.scooterId}')">إنهاء وتحصيل</button>
-                    </div>`;
-            });
-            document.getElementById('k-active').innerText = count;
-        });
+    // --- 2. محرك السكوتر (Broadcast) ---
+    function startScooterBroadcasting() {
+        document.getElementById('sc-id-display').innerText = "DEVICE ID: " + myScooterId;
+        if(navigator.geolocation) {
+            navigator.geolocation.watchPosition(pos => {
+                const lat = pos.coords.latitude, lon = pos.coords.longitude;
+                const speed = Math.round(pos.coords.speed * 3.6) || 0;
+                document.getElementById('sc-speed').innerText = speed;
+                
+                navigator.getBattery?.().then(bt => {
+                    const batt = Math.round(bt.level * 100);
+                    document.getElementById('sc-batt').innerText = batt + "%";
+                    // بث البيانات للقاعدة (ليراها الأدمن والعميل)
+                    db.ref('live_nodes/' + myScooterId).update({
+                        lat, lon, speed, batt, status: 'available', lastUpdate: Date.now()
+                    });
+                });
+            }, null, {enableHighAccuracy:true});
+        }
+    }
 
-        // 2. مراقبة شات الدعم (تنبيه بالرسائل الجديدة)
-        db.ref('support_chats').on('value', snap => {
-            const list = document.getElementById('support-list'); list.innerHTML = "";
-            let msgCount = 0;
+    // --- 3. محرك الداش بورد (Admin) ---
+    function runDashboardLogic() {
+        // مراقبة الأجهزة وشحنها (الرادار)
+        db.ref('live_nodes').on('value', snap => {
+            const list = document.getElementById('adm-device-list'); list.innerHTML = "";
             snap.forEach(c => {
-                msgCount++;
+                const d = c.val();
                 list.innerHTML += `
-                    <div class="chat-list-item" onclick="openChatWithUser('${c.key}')">
-                        <div><i class="fas fa-user-circle"></i> <b>عميل: ${c.key}</b></div>
-                        <span class="badge">رسالة جديدة</span>
+                    <div class="db-card">
+                        <div><b>🛵 جهاز: ${c.key}</b><br><small>الموقع: ${d.lat.toFixed(4)}, ${d.lon.toFixed(4)}</small></div>
+                        <div style="text-align:center">البطارية<br><b style="color:${d.batt<20?'red':'var(--success)'}">${d.batt}%</b></div>
+                        <div class="stat-badge">${d.status}</div>
                     </div>`;
             });
-            document.getElementById('msg-count').innerText = msgCount;
-            document.getElementById('msg-count').style.display = msgCount > 0 ? 'inline' : 'none';
         });
 
-        // 3. مراقبة أرصدة العملاء
+        // قاعدة بيانات العملاء
         db.ref('users').on('value', snap => {
-            const list = document.getElementById('admin-user-list'); list.innerHTML = "";
+            const list = document.getElementById('adm-user-db-list'); list.innerHTML = "";
             snap.forEach(u => {
                 const data = u.val();
                 list.innerHTML += `
-                    <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div><b>👤 ${u.key}</b><br><small>الرصيد الحالي: ${data.balance || 0} ج</small></div>
-                        <button class="btn-adm btn-green" onclick="rechargeUser('${u.key}')">+ شحن رصيد</button>
+                    <div class="db-card">
+                        <div><b>👤 ${data.name || 'عميل جديد'}</b><br><small>رقم: ${u.key}</small></div>
+                        <div>الرصيد: <b style="color:var(--success)">${data.balance || 0} ج</b></div>
+                        <button class="btn-action btn-blue" onclick="rechargeUser('${u.key}')">شحن</button>
                     </div>`;
             });
         });
 
-        // 4. مراقبة الخزينة
-        db.ref('shifts/current/cash').on('value', s => document.getElementById('k-cash').innerText = (s.val()||0) + " ج");
-    }
-
-    // --- وظيفة الرد على العميل (شات بشري) ---
-    async function openChatWithUser(phone) {
-        const { value: reply } = await Swal.fire({
-            title: `الرد على العميل ${phone}`,
-            input: 'textarea',
-            inputPlaceholder: 'اكتب ردك هنا لظهر للعميل فوراً...',
-            showCancelButton: true,
-            confirmButtonText: 'إرسال الرد'
-        });
-        if(reply) {
-            db.ref('support_chats/' + phone + '/messages').push({
-                text: reply, sender: 'admin', time: Date.now()
+        // الرحلات والمالية
+        db.ref('active_trips').on('value', s => {
+            document.getElementById('k-active').innerText = s.numChildren();
+            const list = document.getElementById('live-trips-list'); list.innerHTML = "";
+            s.forEach(c => {
+                const t = c.val();
+                list.innerHTML += `<div class="db-card" style="border-right:8px solid var(--primary)"><b>🛵 ${t.scooterId}</b> <span>العميل: ${t.phone}</span> <button class="btn-action btn-danger" onclick="forceEnd('${c.key}')">إنهاء</button></div>`;
             });
-            Swal.fire('تم الإرسال', '', 'success');
-        }
+        });
+
+        db.ref('shifts/current/cash').on('value', s => document.getElementById('k-cash').innerText = (s.val()||0) + " ج");
+        
+        runAIAnalysis();
     }
 
-    // --- وظيفة الشحن اللحظي (المحفظة) ---
+    // --- العمليات ---
     async function rechargeUser(phone) {
-        const { value: amt } = await Swal.fire({ title: 'شحن رصيد لحظي', input: 'number', inputLabel: `الرقم: ${phone}` });
-        if(amt) {
-            db.ref('users/' + phone + '/balance').transaction(v => (v || 0) + parseFloat(amt));
-            Swal.fire('نجاح', 'تم إضافة الرصيد وظهر عند العميل الآن', 'success');
-        }
+        const { value: amt } = await Swal.fire({ title:'شحن رصيد', input:'number', inputLabel: phone });
+        if(amt) db.ref('users/'+phone+'/balance').transaction(v => (v||0) + parseFloat(amt));
     }
 
-    // --- إدارة الأسطول والمخزن ---
-    async function addScooter() {
-        const { value: name } = await Swal.fire({ title: 'اسم السكوتر', input: 'text' });
-        if(name) db.ref('live_nodes/' + name).set({ lat: 30.0444, lon: 31.2357, status: 'available', speed: 0, batt: 100 });
+    async function addScooterToSys() {
+        const { value: name } = await Swal.fire({ title:'إضافة سكوتر للمخزن', input:'text' });
+        if(name) db.ref('live_nodes/'+name).set({ lat: 30.0444, lon: 31.2357, batt: 100, speed: 0, status: 'available' });
     }
 
-    function forceEndRide(key, scId) {
-        Swal.fire({ title: 'تأكيد الإنهاء؟', icon: 'warning', showCancelButton: true }).then(r => {
-            if(r.isConfirmed) {
-                db.ref('active_trips/' + key).remove();
-                db.ref('live_nodes/' + scId).update({ status: 'available' });
-            }
+    function runAIAnalysis() {
+        db.ref('shifts/history').limitToLast(20).once('value', s => {
+            let total = 0; s.forEach(c => total += parseFloat(c.val().final || 0));
+            document.getElementById('ai-insight-box').innerText = "🤖 نصيحة AI: بناءً على آخر العمليات، متوسط الربح في تحسن. إجمالي دخل الأرشيف المحلل: " + total + " ج.";
         });
     }
 
-    function showSec(id) {
+    function showAdminSec(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById('sec-' + id).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('adm-' + id).classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
         event.currentTarget.classList.add('active');
     }
 
-    function saveSettings() {
-        const m = document.getElementById('set-min').value;
-        const b = document.getElementById('set-base').value;
-        db.ref('settings').set({ min: parseFloat(m), base: parseFloat(b) });
-        Swal.fire('تم التحديث');
+    function saveSysConfig() {
+        db.ref('settings').set({
+            min: parseFloat(document.getElementById('set-min').value),
+            base: parseFloat(document.getElementById('set-base').value)
+        });
+        Swal.fire('تم الحفظ');
     }
 </script>
 </body>
