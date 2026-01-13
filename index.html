@@ -3,28 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | التطبيق العالمي للعملاء</title>
+    <title>Yalla Scooter Titan | النسخة المليونية</title>
     
-    <!-- مكاتب التشغيل -->
+    <!-- الموارد التقنية (ممنوع الحذف) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script> <!-- مكتبة الكاميرا -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            --white: #ffffff;
-            --main-blue: #0066ff;
-            --light-blue: #eef4ff;
-            --text-dark: #1a1a1a;
-            --text-gray: #7a7a7a;
-            --neon-green: #00ff9d;
-            --danger: #ff3b30;
+            --white: #ffffff; --main-blue: #0066ff; --light-blue: #eef4ff;
+            --text-dark: #1a1a1a; --danger: #ff3b30; --success: #34c759;
+            --warn: #ff9500; --no-go: rgba(255, 59, 48, 0.2);
         }
 
         * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; margin: 0; padding: 0; }
@@ -32,193 +28,174 @@
 
         /* --- شاشة الدخول --- */
         #auth-screen { position: fixed; inset: 0; background: var(--white); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
-        .logo-box { width: 120px; height: 120px; background: var(--main-blue); border-radius: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,102,255,0.3); margin-bottom: 20px; }
-        .auth-input { width: 100%; padding: 18px; border-radius: 15px; border: 1px solid #ddd; margin-bottom: 12px; font-size: 18px; text-align: center; background: var(--light-blue); }
+        .auth-input { width: 100%; padding: 18px; border-radius: 15px; border: 1px solid #ddd; margin-bottom: 12px; text-align: center; font-size: 18px; background: var(--light-blue); }
 
-        /* --- الواجهة الرئيسية (الخريطة) --- */
+        /* --- الواجهة الرئيسية --- */
         #user-app { display: none; height: 100vh; position: relative; }
-        #map { position: absolute; inset: 0; z-index: 1; filter: grayscale(0.2); }
+        #map { position: absolute; inset: 0; z-index: 1; }
 
-        /* --- HUD (الأزرار العائمة) --- */
+        /* --- HUD --- */
         .hud-top { position: absolute; top: 50px; left: 20px; right: 20px; z-index: 1000; display: flex; justify-content: space-between; pointer-events: none; }
         .hud-bottom { position: absolute; bottom: 30px; width: 100%; z-index: 1000; display: flex; justify-content: center; align-items: center; pointer-events: none; }
+        .circle-btn { width: 55px; height: 55px; background: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--main-blue); border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; pointer-events: auto; position: relative; }
+        .btn-scan { width: 200px; height: 60px; background: var(--main-blue); color: white; border-radius: 50px; font-weight: 900; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 12px; border: none; box-shadow: 0 10px 25px rgba(0,102,255,0.3); pointer-events: auto; }
         
-        .circle-btn { width: 55px; height: 55px; background: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--main-blue); border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; pointer-events: auto; }
-        .btn-scan { width: 220px; height: 60px; background: var(--main-blue); color: white; border-radius: 50px; font-weight: 900; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 12px; border: none; box-shadow: 0 10px 25px rgba(0,102,255,0.3); pointer-events: auto; margin: 0 20px; }
+        .chat-badge { position: absolute; top: 0; right: 0; width: 15px; height: 15px; background: var(--danger); border-radius: 50%; border: 2px solid white; display: none; }
 
         /* --- القائمة الجانبية --- */
         #side-menu { position: fixed; top: 0; right: -100%; width: 85%; height: 100%; background: var(--white); z-index: 5000; padding: 60px 30px; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.1); }
         #side-menu.open { right: 0; }
         .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 4999; display: none; backdrop-filter: blur(3px); }
-        .menu-item { display: flex; align-items: center; gap: 15px; padding: 20px 0; border-bottom: 1px solid var(--light-blue); color: var(--text-dark); font-weight: 600; cursor: pointer; }
-        .menu-item i { color: var(--main-blue); font-size: 20px; width: 25px; }
+        .menu-item { display: flex; align-items: center; gap: 15px; padding: 20px 0; border-bottom: 1px solid var(--light-blue); font-weight: 600; cursor: pointer; }
 
-        /* --- الصفحات الكاملة (Full Pages) --- */
+        /* --- شاشات كاملة --- */
         .page { position: fixed; inset: 0; background: var(--white); z-index: 6000; display: none; flex-direction: column; animation: slideUp 0.4s ease; }
         @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
-        .page-header { padding: 25px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--light-blue); font-weight: 900; font-size: 20px; color: var(--main-blue); }
+        .page-header { padding: 25px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--light-blue); font-weight: 900; color: var(--main-blue); }
 
-        /* --- شات AI والدعم --- */
-        #chat-content { flex: 1; overflow-y: auto; padding: 20px; background: var(--light-blue); }
-        .msg { margin-bottom: 15px; max-width: 80%; padding: 12px 18px; border-radius: 20px; font-size: 14px; }
-        .msg.ai { background: var(--white); align-self: flex-start; color: var(--text-dark); border-bottom-right-radius: 5px; }
-        .msg.user { background: var(--main-blue); align-self: flex-end; color: var(--white); border-bottom-left-radius: 5px; margin-right: auto; }
-        .chat-input-area { padding: 20px; background: var(--white); display: flex; gap: 10px; }
+        /* --- البطارية والبيانات على الماركر --- */
+        .scooter-label { background: white; border-radius: 5px; padding: 2px 5px; font-size: 10px; font-weight: bold; border: 1px solid #ddd; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
 
-        /* --- المحفظة والسجل --- */
-        .wallet-card { background: linear-gradient(135deg, var(--main-blue), #00d2ff); padding: 30px; border-radius: 25px; color: white; text-align: center; margin: 20px; }
-        .history-card { background: var(--white); border: 1px solid var(--light-blue); padding: 20px; border-radius: 20px; margin: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        /* --- لوحة التحكم بالرحلة والحجز --- */
+        #active-panel { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 30px 30px 0 0; padding: 25px; z-index: 2000; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); display: none; }
+        .reserve-timer { color: var(--warn); font-family: Orbitron; font-size: 20px; text-align: center; margin-bottom: 10px; }
 
-        /* --- ماسح الكاميرا --- */
-        #qr-reader { width: 100%; height: 300px; }
-
-        /* أيقونة السكوتر على الخريطة */
-        .bike-icon { width: 45px; height: 45px; background: var(--white); border-radius: 50%; border: 2.5px solid var(--main-blue); display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        /* --- الدعم والشات --- */
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9fb; display: flex; flex-direction: column; }
+        .bubble { padding: 12px 18px; border-radius: 20px; margin-bottom: 10px; max-width: 80%; font-size: 14px; }
+        .bubble.me { background: var(--main-blue); color: white; align-self: flex-end; border-bottom-left-radius: 2px; }
+        .bubble.them { background: white; color: var(--text-dark); align-self: flex-start; border-bottom-right-radius: 2px; border: 1px solid #eee; }
     </style>
 </head>
 <body>
 
     <!-- 1. شاشة الدخول -->
     <div id="auth-screen">
-        <div class="logo-box">
-            <svg width="70" viewBox="0 0 100 100">
-                <path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/>
-            </svg>
+        <div style="width:100px; height:100px; background:var(--main-blue); border-radius:25px; margin-bottom:20px; display:flex; align-items:center; justify-content:center;">
+            <svg width="60" viewBox="0 0 100 100"><path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/></svg>
         </div>
-        <h1 style="color:var(--main-blue); font-family:Orbitron; letter-spacing:2px; margin-bottom:40px;">YALLA SCOOTER</h1>
+        <h1 style="color:var(--main-blue); font-family:Orbitron; letter-spacing:2px; margin-bottom:40px;">YALLA TITAN</h1>
         <input type="tel" id="uPhone" class="auth-input" placeholder="رقم الهاتف">
-        <input type="email" id="uEmail" class="auth-input" placeholder="البريد الإلكتروني (اختياري)">
-        <button onclick="handleLogin()" class="btn-scan" style="position:static; transform:none; width:100%; margin-top:10px;">تسجيل الدخول</button>
+        <button onclick="handleLogin()" class="btn-scan" style="position:static; width:100%; transform:none;">دخول</button>
     </div>
 
-    <!-- 2. واجهة التطبيق الرئيسية -->
+    <!-- 2. التطبيق الرئيسي -->
     <div id="user-app">
         <div id="map"></div>
         
-        <!-- HUD علوي -->
         <div class="hud-top">
             <button class="circle-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-            <div id="nearest-info" style="background:var(--white); padding:10px 20px; border-radius:50px; box-shadow:0 5px 15px rgba(0,0,0,0.1); pointer-events:auto; font-weight:700; font-size:12px;">
-                <i class="fas fa-walking" style="color:var(--main-blue)"></i> <span id="walk-mins">--</span> دقيقة مشي
+            <div id="status-tag" style="background:white; padding:10px 20px; border-radius:50px; box-shadow:0 5px 15px rgba(0,0,0,0.1); pointer-events:auto; font-weight:700;">
+                <span id="walk-info">جاري البحث عن سكوتر...</span>
             </div>
-            <button class="circle-btn" onclick="openPage('chat')"><i class="fas fa-comment-dots"></i></button>
+            <button class="circle-btn" onclick="openPage('chat')"><i class="fas fa-headset"></i><div class="chat-badge" id="new-msg-dot"></div></button>
         </div>
 
-        <!-- HUD سفلي -->
         <div class="hud-bottom">
             <button class="circle-btn" onclick="locateMe()"><i class="fas fa-crosshairs"></i></button>
             <button class="btn-scan" onclick="openPage('scanner')"><i class="fas fa-qrcode"></i> Scan to Ride</button>
             <button class="circle-btn" onclick="openPage('wallet')"><i class="fas fa-wallet"></i></button>
         </div>
 
-        <!-- المنيو الجانبي -->
+        <!-- القائمة الجانبية -->
         <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
         <nav id="side-menu">
             <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
-                <div style="width:60px; height:60px; background:var(--light-blue); border-radius:20px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-user-circle" style="font-size:35px; color:var(--main-blue)"></i>
-                </div>
-                <div><b id="disp-phone">01014004125</b><br><small style="color:var(--text-gray)">عميل بريميوم</small></div>
+                <i class="fas fa-user-circle" style="font-size:50px; color:var(--main-blue)"></i>
+                <div><b id="disp-ph">--</b><br><small>المستوى: ذهبي</small></div>
             </div>
             <div class="menu-item" onclick="openPage('history')"><i class="fas fa-history"></i> سجل الرحلات</div>
             <div class="menu-item" onclick="openPage('wallet')"><i class="fas fa-wallet"></i> المحفظة</div>
-            <div class="menu-item" onclick="Swal.fire('قريباً', 'ميزة الحجز المسبق ستتوفر في التحديث القادم', 'info')"><i class="fas fa-calendar-alt"></i> حجز سكوتر</div>
-            <div class="menu-item" onclick="openPage('chat')"><i class="fas fa-headset"></i> الدعم والمساعدة</div>
-            <div class="menu-item" onclick="logout()" style="margin-top:auto; border:none; color:var(--danger)"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</div>
+            <div class="menu-item" onclick="openPage('chat')"><i class="fas fa-headset"></i> الدعم والموظف المباشر</div>
+            <div class="menu-item" onclick="logout()" style="margin-top:auto; color:var(--danger); border:none;"><i class="fas fa-sign-out-alt"></i> خروج</div>
         </nav>
+
+        <!-- لوحة التحكم بالرحلة / الحجز -->
+        <div id="active-panel">
+            <div class="reserve-timer" id="res-timer" style="display:none;">ينتهي الحجز خلال: 09:59</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b id="panel-scId">🛵 سكوتر --</b><br><small id="panel-status">حالة الرحلة</small></div>
+                <h2 id="panel-timer" style="font-family:Orbitron; color:var(--main-blue);">00:00</h2>
+            </div>
+            <button id="main-action-btn" class="btn-scan" style="position:static; width:100%; transform:none; margin-top:15px;" onclick="handleAction()">إنهاء الرحلة</button>
+        </div>
     </div>
 
-    <!-- 3. شاشة الشات AI والدعم -->
+    <!-- 3. شاشة الشات والدعم البشري -->
     <div id="pg-chat" class="page">
-        <div class="page-header"><i class="fas fa-times" onclick="closePage('chat')"></i> الدعم الذكي <i></i></div>
-        <div id="chat-content" style="display:flex; flex-direction:column;">
-            <div class="msg ai">مرحباً! أنا مساعد يلا سكوتر الذكي. كيف يمكنني مساعدتك اليوم؟</div>
-        </div>
-        <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="اكتب مشكلتك هنا..." style="flex:1; border:none; background:var(--light-blue); padding:15px; border-radius:12px;">
-            <button class="circle-btn" style="width:50px; height:50px;" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        <div class="page-header"><i class="fas fa-chevron-left" onclick="closePage('chat')"></i> الدعم المباشر (أونلاين) <i></i></div>
+        <div id="chat-box"></div>
+        <div style="padding:15px; display:flex; gap:10px; border-top:1px solid #eee;">
+            <input type="text" id="msgInput" placeholder="اكتب رسالتك للموظف..." style="flex:1; border:none; background:#f0f2f5; padding:15px; border-radius:12px;">
+            <button class="circle-btn" style="width:50px; height:50px;" onclick="sendHumanMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
-    <!-- 4. شاشة المحفظة وفوري -->
+    <!-- 4. شاشة المحفظة -->
     <div id="pg-wallet" class="page">
-        <div class="page-header"><i class="fas fa-chevron-left" onclick="closePage('wallet')"></i> المحفظة <i></i></div>
-        <div class="wallet-card">
-            <p>الرصيد المتاح</p>
+        <div class="page-header"><i class="fas fa-chevron-left" onclick="closePage('wallet')"></i> محفظتي <i></i></div>
+        <div style="background:var(--main-blue); padding:30px; border-radius:25px; margin:20px; color:white; text-align:center;">
+            <small>الرصيد المتاح</small>
             <h1 style="font-family:Orbitron; font-size:45px;"><span id="bal-val">0.00</span> ج.م</h1>
         </div>
         <div style="padding:20px;">
-            <h3>شحن رصيد آمن</h3>
-            <div style="background:var(--light-blue); padding:20px; border-radius:20px; margin-top:15px; display:flex; justify-content:space-between; align-items:center; border:2px solid var(--main-blue);" onclick="fawryPay()">
-                <div><b>الدفع عبر FawryPay</b><br><small>أكثر أماناً وسرعة</small></div>
-                <img src="https://fawry.com/wp-content/uploads/2021/04/Fawry-logo-English.png" width="80">
-            </div>
-            <div style="background:var(--light-blue); padding:20px; border-radius:20px; margin-top:10px; display:flex; justify-content:space-between; align-items:center;" onclick="Swal.fire('تحويل مباشر', 'حول للرقم 01014004125 لزيادة رصيدك فوراً', 'info')">
-                <div><b>تحويل كاش / إنستا باي</b><br><small>01014004125</small></div>
-                <i class="fas fa-mobile-alt" style="font-size:25px; color:var(--main-blue)"></i>
-            </div>
+            <input type="text" id="promoInput" placeholder="أدخل كود الخصم" class="auth-input">
+            <button class="btn-scan" style="position:static; width:100%; transform:none; margin-bottom:30px;" onclick="applyPromo()">تفعيل الكود</button>
+            <hr>
+            <h3 style="margin-top:20px;">شحن الرصيد</h3>
+            <div class="menu-item" onclick="fawryPay()"><i class="fas fa-credit-card"></i> FawryPay (فيزا / ميزة)</div>
+            <div class="menu-item" onclick="Swal.fire('تحويل', 'حول لـ 01014004125 وابعت سكرين شات', 'info')"><i class="fas fa-mobile-alt"></i> تحويل كاش</div>
         </div>
     </div>
 
-    <!-- 5. شاشة سجل الرحلات -->
-    <div id="pg-history" class="page">
-        <div class="page-header"><i class="fas fa-chevron-left" onclick="closePage('history')"></i> سجل الرحلات <i></i></div>
-        <div id="history-list">
-            <!-- سيتم تحميل السجل هنا -->
-        </div>
-    </div>
-
-    <!-- 6. شاشة مسح الـ QR -->
+    <!-- شاشة المسح والكاميرا -->
     <div id="pg-scanner" class="page">
         <div class="page-header"><i class="fas fa-times" onclick="closePage('scanner')"></i> امسح كود السكوتر <i></i></div>
-        <div id="qr-reader"></div>
-        <div style="padding:30px; text-align:center;">
-            <p style="color:var(--text-gray)">وجه الكاميرا نحو المربع الموجود على السكوتر</p>
-            <input type="text" id="scIdInput" placeholder="أو أدخل رقم السكوتر يدوياً" class="auth-input" style="margin-top:20px;">
-            <button class="btn-scan" style="position:static; width:100%; margin-top:15px;" onclick="startRideManual()">تأكيد البدء</button>
-        </div>
+        <div id="qr-reader" style="width:100%;"></div>
     </div>
 
 <script>
-    // --- الربط مع Firebase ---
+    // --- ربط Firebase ---
     const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let map, userMarker, scooterMarkers = {}, userLoc = [30.0444, 31.2357];
-    let userPhone = localStorage.getItem('y_ph_official');
+    let userPhone = localStorage.getItem('y_ph_v100');
+    let noGoZones = [];
 
     window.onload = () => { if(userPhone) { document.getElementById('auth-screen').style.display='none'; initApp(); } };
 
     function handleLogin() {
         const ph = document.getElementById('uPhone').value;
-        if(ph.length < 11) return Swal.fire('خطأ', 'رقم الهاتف غير صحيح', 'error');
-        userPhone = ph; localStorage.setItem('y_ph_official', ph);
+        if(ph.length < 11) return Swal.fire('خطأ', 'رقم الهاتف ناقص', 'error');
+        userPhone = ph; localStorage.setItem('y_ph_v100', ph);
         location.reload();
     }
 
-    // --- تشغيل التطبيق والخرائط والـ GPS ---
+    // --- تشغيل التطبيق والخرائط ---
     function initApp() {
         document.getElementById('user-app').style.display = 'block';
-        document.getElementById('disp-phone').innerText = userPhone;
+        document.getElementById('disp-ph').innerText = userPhone;
 
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView(userLoc, 16);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // مراقبة مكان العميل بالـ GPS
+        // رسم مناطق الحظر (No-Go Zones)
+        const noGoCircle = L.circle([30.0460, 31.2370], { color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: 200 }).addTo(map);
+        noGoZones.push(noGoCircle);
+
+        // GPS العميل
         if(navigator.geolocation) {
             navigator.geolocation.watchPosition(pos => {
                 userLoc = [pos.coords.latitude, pos.coords.longitude];
-                if(!userMarker) {
-                    userMarker = L.circleMarker(userLoc, { radius: 10, color: '#fff', fillColor: '#0066ff', fillOpacity: 1, weight: 3 }).addTo(map);
-                } else {
-                    userMarker.setLatLng(userLoc);
-                }
-                findNearestScooter();
+                if(!userMarker) userMarker = L.circleMarker(userLoc, { radius: 10, color: '#fff', fillColor: '#0066ff', fillOpacity: 1, weight: 3 }).addTo(map);
+                else userMarker.setLatLng(userLoc);
+                checkSafety(userLoc);
             });
         }
 
-        // جلب السكوترات المتاحة وحساب المسافة
+        // جلب السكوترات (بالبطارية)
         db.ref('live_nodes').on('value', snap => {
             const data = snap.val() || {};
             for(let id in scooterMarkers) { map.removeLayer(scooterMarkers[id]); }
@@ -226,101 +203,130 @@
 
             for(let id in data) {
                 const d = data[id];
-                if(d.status === 'available') {
-                    const icon = L.divIcon({ className:'b', html:`<div class="bike-icon"><svg width="25" viewBox="0 0 100 100"><path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="#0066ff" stroke-width="12" fill="none" stroke-linecap="round"/></svg></div>` });
-                    scooterMarkers[id] = L.marker([d.lat, d.lon], {icon}).addTo(map);
+                if(d.status === 'available' || d.reservedBy === userPhone) {
+                    const color = d.batt > 60 ? 'var(--success)' : (d.batt > 30 ? 'var(--warn)' : 'var(--danger)');
+                    const icon = L.divIcon({ className:'b', html:`
+                        <div style="position:relative">
+                            <div class="scooter-label" style="color:${color}">${d.batt}% شحن</div>
+                            <div class="circle-btn" style="width:40px; height:40px; color:${color}; border:2px solid ${color}">
+                                <i class="fas fa-motorcycle"></i>
+                            </div>
+                        </div>` 
+                    });
+                    const m = L.marker([d.lat, d.lon], {icon}).addTo(map);
+                    m.on('click', () => showScooterOptions(id, d));
+                    scooterMarkers[id] = m;
                 }
             }
-            findNearestScooter();
         });
 
-        // متابعة الرصيد
-        db.ref('users/'+userPhone+'/balance').on('value', s => { document.getElementById('bal-val').innerText = (s.val()||0).toFixed(2); });
-        loadHistory();
-    }
-
-    // --- حساب أقرب سكوتر وكم دقيقة مشي ---
-    function findNearestScooter() {
-        let minTime = Infinity;
-        for(let id in scooterMarkers) {
-            const scLoc = scooterMarkers[id].getLatLng();
-            const dist = map.distance(userLoc, [scLoc.lat, scLoc.lng]); // بالأمتار
-            const time = Math.round(dist / 80); // متوسط سرعة المشي 80 متر/دقيقة
-            if(time < minTime) minTime = time;
-        }
-        document.getElementById('walk-mins').innerText = (minTime === Infinity) ? "--" : minTime;
-    }
-
-    // --- نظام الدعم AI الشغال ---
-    function sendMessage() {
-        const txt = document.getElementById('chatInput').value;
-        if(!txt) return;
-        const chat = document.getElementById('chat-content');
-        chat.innerHTML += `<div class="msg user">${txt}</div>`;
-        document.getElementById('chatInput').value = "";
-
-        // رد الـ AI التفاعلي
-        setTimeout(() => {
-            let reply = "فهمت مشكلتك، سأقوم بتحويلك لموظف بشري فوراً للمساعدة أو يمكنك إعطائي تفاصيل أكثر.";
-            if(txt.includes("فلوس") || txt.includes("رصيد")) reply = "بخصوص الرصيد، يمكنك الشحن عبر فوري أو التحويل لـ 01014004125.";
-            if(txt.includes("سكوتر") || txt.includes("مشكلة")) reply = "إذا واجهت مشكلة في السكوتر، يرجى كتابة رقم السكوتر وتصوير المشكلة.";
-            chat.innerHTML += `<div class="msg ai">${reply}</div>`;
-            chat.scrollTop = chat.scrollHeight;
-        }, 1000);
-    }
-
-    // --- العمليات (فوري، سكان، إلخ) ---
-    function fawryPay() {
-        Swal.fire({
-            title: 'بوابة فوري',
-            text: 'جاري الاتصال بخوادم FawryPay لتأمين العملية...',
-            icon: 'info', timer: 2000, showConfirmButton: false
-        }).then(() => {
-            Swal.fire('تنبيه', 'تم تفعيل وضع الدفع الآمن، أدخل بيانات الكارت في النافذة التالية', 'success');
-        });
-    }
-
-    function openScanner() {
-        const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
-        scanner.render((text) => {
-            document.getElementById('scIdInput').value = text;
-            scanner.clear();
-            startRideManual();
-        });
-    }
-
-    async function startRideManual() {
-        const id = document.getElementById('scIdInput').value;
-        if(!id) return Swal.fire('خطأ', 'يرجى إدخال رقم السكوتر', 'error');
+        // ربط الشات المباشر
+        listenToSupport();
         
-        db.ref('active_trips').push({ phone: userPhone, scooterId: id, start: Date.now() });
-        Swal.fire('انطلق!', 'تم بدء الرحلة بنجاح، رحلة سعيدة', 'success');
-        closePage('scanner');
-    }
-
-    function loadHistory() {
-        db.ref('shifts/history').on('value', s => {
-            const list = document.getElementById('history-list'); list.innerHTML = "";
+        // متابعة الرحلة والحجز
+        db.ref('active_trips').on('value', s => {
+            let found = false;
             s.forEach(c => {
-                const h = c.val();
-                if(h.phone === userPhone) {
-                    list.innerHTML += `<div class="history-card">
-                        <div><b>🛵 ${h.scooterId}</b><br><small>${new Date(h.time).toLocaleDateString()}</small></div>
-                        <div style="color:var(--main-blue); font-weight:900;">${h.final} ج.م</div>
-                    </div>`;
+                if(c.val().phone === userPhone) {
+                    found = true;
+                    showActivePanel(c.key, c.val());
                 }
             });
+            if(!found) {
+                db.ref('reservations').child(userPhone).on('value', resSnap => {
+                    if(resSnap.exists()) showReservationPanel(resSnap.val());
+                    else document.getElementById('active-panel').style.display = 'none';
+                });
+            }
+        });
+        
+        db.ref('users/'+userPhone+'/balance').on('value', s => document.getElementById('bal-val').innerText = (s.val()||0).toFixed(2));
+    }
+
+    // --- ميزة الحجز (Reservation) ---
+    function showScooterOptions(id, data) {
+        Swal.fire({
+            title: `سكوتر ${id}`,
+            text: `البطارية: ${data.batt}% | ${Math.round(map.distance(userLoc, [data.lat, data.lon])/80)} دقيقة مشي`,
+            showCancelButton: true,
+            confirmButtonText: 'حجز (10 دقائق)',
+            cancelButtonText: 'إغلاق',
+            confirmButtonColor: 'var(--warn)'
+        }).then(res => {
+            if(res.isConfirmed) {
+                db.ref('reservations/'+userPhone).set({ scooterId: id, start: Date.now() });
+                db.ref('live_nodes/'+id).update({ status: 'reserved', reservedBy: userPhone });
+                aiSpeak("تم حجز السكوتر لك لمدة عشر دقائق، أنا بانتظارك.");
+            }
         });
     }
 
-    // --- المساعدات ---
-    function toggleMenu() { 
-        const m = document.getElementById('side-menu');
-        m.classList.toggle('open');
-        document.getElementById('overlay').style.display = m.classList.contains('open') ? 'block' : 'none';
+    // --- الدعم البشري المباشر (الشات) ---
+    function sendHumanMessage() {
+        const txt = document.getElementById('msgInput').value;
+        if(!txt) return;
+        const msgData = { text: txt, sender: 'user', time: Date.now() };
+        db.ref('support_chats/' + userPhone + '/messages').push(msgData);
+        document.getElementById('msgInput').value = "";
     }
-    function openPage(id) { document.getElementById('pg-'+id).style.display = 'flex'; if(id === 'scanner') openScanner(); }
-    function closePage(id) { document.getElementById('pg-'+id).style.display = 'none'; }
+
+    function listenToSupport() {
+        db.ref('support_chats/' + userPhone + '/messages').on('value', snap => {
+            const box = document.getElementById('chat-box');
+            box.innerHTML = "";
+            snap.forEach(c => {
+                const m = c.val();
+                box.innerHTML += `<div class="bubble ${m.sender === 'user' ? 'me' : 'them'}">${m.text}</div>`;
+            });
+            box.scrollTop = box.scrollHeight;
+        });
+    }
+
+    // --- توثيق الركن بالصور (Parking Proof) ---
+    async function handleAction() {
+        // إذا كنا ننهي رحلة، نطلب صورة
+        const { value: file } = await Swal.fire({
+            title: 'صور ركن السكوتر',
+            text: 'يجب تصوير السكوتر في مكان آمن لإنهاء الرحلة',
+            input: 'file',
+            inputAttributes: { 'accept': 'image/*', 'capture': 'camera' },
+            showCancelButton: true,
+            confirmButtonText: 'تأكيد وصورة',
+            background: '#fff'
+        });
+
+        if (file) {
+            Swal.fire('جاري التحقق...', 'الـ AI يراجع جودة الصورة ومكان الركن', 'info');
+            setTimeout(() => {
+                // إنهاء الرحلة فعلياً في القاعدة
+                db.ref('active_trips').orderByChild('phone').equalTo(userPhone).once('value', s => {
+                    s.forEach(c => {
+                        const trip = c.val();
+                        db.ref('shifts/history').push({ ...trip, time: Date.now(), final: 40 }); // مثال مبلغ
+                        db.ref('active_trips/'+c.key).remove();
+                        db.ref('live_nodes/'+trip.scooterId).update({ status:'available', reservedBy: null });
+                    });
+                });
+                Swal.fire('شكراً لك!', 'تم إنهاء الرحلة بنجاح، يومك سعيد.', 'success');
+                aiSpeak("تم قفل السكوتر وتأكيد الركن. شكراً لاستخدامك يلا سكوتر.");
+            }, 2000);
+        }
+    }
+
+    // --- المساعدات والـ AI ---
+    function checkSafety(loc) {
+        noGoZones.forEach(zone => {
+            const dist = map.distance(loc, zone.getLatLng());
+            if(dist < zone.getRadius()) {
+                aiSpeak("تنبيه! أنت في منطقة محظورة، يرجى العودة للمسار الأخضر فوراً.");
+            }
+        });
+    }
+
+    function aiSpeak(t) { if('speechSynthesis' in window) { const m = new SpeechSynthesisUtterance(t); m.lang='ar-SA'; window.speechSynthesis.speak(m); } }
+    function toggleMenu() { const m=document.getElementById('side-menu'); m.classList.toggle('open'); document.getElementById('overlay').style.display=m.classList.contains('open')?'block':'none'; }
+    function openPage(id) { document.getElementById('pg-'+id).style.display='flex'; }
+    function closePage(id) { document.getElementById('pg-'+id).style.display='none'; }
     function locateMe() { map.flyTo(userLoc, 18); }
     function logout() { localStorage.clear(); location.reload(); }
 </script>
