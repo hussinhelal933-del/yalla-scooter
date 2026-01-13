@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yalla App | Finance Dashboard</title>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 class="logo">YALLA</h2>
+        <div class="nav-link active"><i class="fas fa-wallet"></i> المالية</div>
+    </div>
+
+    <div class="main">
+        <h2>الداشبورد المالية</h2>
+
+        <div class="kpi-row">
+            <div class="kpi-box">دخل اليوم<b id="finToday">0 ج</b></div>
+            <div class="kpi-box">دخل الشهر<b id="finMonth">0 ج</b></div>
+            <div class="kpi-box">عدد الرحلات<b id="finTrips">0</b></div>
+            <div class="kpi-box">متوسط الرحلة<b id="finAvg">0 ج</b></div>
+            <div class="kpi-box">أرصدة العملاء<b id="finWallets">0 ج</b></div>
+            <div class="kpi-box">ديون العملاء<b id="finDebt" class="danger">0 ج</b></div>
+        </div>
+
+        <h3>السجل المالي</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>عدد الرحلات</th>
+                        <th>الدخل</th>
+                    </tr>
+                </thead>
+                <tbody id="financeBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
