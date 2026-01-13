@@ -1,270 +1,167 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | Infinite Dashboard</title>
-    
-    <!-- مكاتب التشغيل -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Rajdhani:wght@600;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<title>Scooter Phone System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root { --blue: #00f2ff; --bg: #000; --card: #0d0d0d; --danger: #ff0055; --success: #0aff60; --border: rgba(0, 242, 255, 0.1); }
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; margin:0; padding:0; }
-        body { background: var(--bg); color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* Navigation Tabs */
-        .bottom-nav { height: 70px; background: #050505; border-top: 1px solid #222; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; z-index: 1000; }
-        .nav-item { text-align: center; color: #555; cursor: pointer; flex: 1; }
-        .nav-item.active { color: var(--blue); }
-        .nav-item i { font-size: 20px; }
-        .nav-item div { font-size: 10px; font-weight: bold; }
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-        /* Content Area */
-        .app-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; }
-        .view { display: none; }
-        .view.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from {opacity:0} to {opacity:1} }
-
-        /* Global UI */
-        .glass-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 15px; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 12px; text-align: center; font-size: 16px; margin-bottom: 10px; }
-        .btn { padding: 15px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
-        .btn-blue { background: var(--blue); color: #000; }
-        .btn-danger { background: rgba(255,0,85,0.1); color: var(--danger); border: 1px solid var(--danger); }
-        .btn-now { background: #1a1a1a; color: var(--blue); font-size: 10px; padding: 5px; margin-bottom: 5px; width: 100%; }
-
-        /* Stats & Archive */
-        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .kpi-card { background: #080808; border: 1px solid #222; padding: 15px; border-radius: 15px; text-align: center; }
-        .kpi-card h3 { font-family: 'Rajdhani'; color: var(--blue); font-size: 22px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 15px; }
-        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #111; }
-
-        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-    </style>
+<style>
+body{margin:0;font-family:Cairo;background:#000;color:#fff}
+header{padding:15px;background:#050505;color:#00ffcc;font-weight:bold}
+section{padding:15px}
+.card{background:#0d1117;border:1px solid #00ffcc33;border-radius:15px;padding:15px;margin-bottom:15px}
+input,button{width:100%;padding:14px;border-radius:12px;border:none;margin-top:10px;font-size:16px}
+button{background:#00ffcc;color:#000;font-weight:bold}
+.locked{color:#ff5555}
+.unlocked{color:#00ff55}
+.small{font-size:12px;color:#aaa}
+</style>
 </head>
 <body>
 
-    <!-- شاشة الدخول الموحدة -->
-    <div id="login-overlay">
-        <h1 style="font-family:'Rajdhani'; color:var(--blue); font-size: 35px; margin-bottom:10px;">YALLA TITAN</h1>
-        <input type="password" id="pinInput" placeholder="أدخل الكود">
-        <button onclick="App.login()" class="btn btn-blue" style="width:250px">INITIALIZE</button>
-    </div>
+<header>🛵 Scooter Phone Controller</header>
 
-    <!-- المحتوى الرئيسي (الأقسام) -->
-    <main class="app-content">
-        
-        <!-- القسم 1: العمليات (Operations) -->
-        <div id="sec-ops" class="view active">
-            <div class="glass-card">
-                <label style="color:var(--blue); font-weight:bold;">🚀 بدء رحلة جديدة</label>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <input type="text" id="cust" placeholder="اسم العميل">
-                    <input type="text" id="scoot" placeholder="رقم السكوتر">
-                </div>
-                <label style="font-size:11px; color:#555">🪪 صورة بطاقة العميل (صورة أو موبايل):</label>
-                <input type="file" id="id-file" accept="image/*" capture="camera" onchange="App.handleID(this)">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-                    <div><label style="font-size:10px">خروج</label><input type="time" id="t1"><button class="btn-now" onclick="App.setNow('t1')">الآن</button></div>
-                    <div><label style="font-size:10px">رجوع</label><input type="time" id="t2"><button class="btn-now" onclick="App.setNow('t2')">الآن</button></div>
-                </div>
-                <button class="btn btn-blue" onclick="App.save(false)">حفظ الرحلة والحساب ✅</button>
-                <button class="btn btn-danger" style="margin-top:10px;" onclick="App.save(true)">🚨 عطل فني وخصم</button>
-            </div>
-            <div id="active-list"></div>
-        </div>
+<section>
 
-        <!-- القسم 2: التحكم (Fleet Control) -->
-        <div id="sec-fleet" class="view">
-            <h3 style="color:var(--blue); margin-bottom:15px;"><i class="fas fa-microchip"></i> تحكم الأسطول عن بُعد</h3>
-            <div id="remote-list"></div>
-            <div class="glass-card" style="margin-top:20px; border-color:var(--success)">
-                <h4 style="color:var(--success)">🤖 Yalla AI Analysis:</h4>
-                <div id="ai-text" style="font-size:12px; color:#aaa; margin-top:10px;">جاري تحليل البيانات...</div>
-            </div>
-        </div>
+<div class="card">
+<b>🔐 حالة السكوتر:</b>
+<div id="status" class="locked">مقفول</div>
+<input type="password" id="pin" placeholder="ادخل كود الفتح">
+<button onclick="unlock()">فتح السكوتر</button>
+<button onclick="endTrip()">إنهاء الرحلة</button>
+</div>
 
-        <!-- القسم 3: الإحصائيات (Stats) -->
-        <div id="sec-stats" class="view">
-            <div class="glass-card">
-                <label>🔍 بحث أداء إسكوتر محدد:</label>
-                <input type="text" id="searchID" placeholder="رقم السكوتر..." oninput="App.filter()">
-                <div class="kpi-row" style="margin-top:10px;">
-                    <div class="kpi-card"><small>إجمالي الدقائق</small><h3 id="st-mins">0</h3></div>
-                    <div class="kpi-card"><small>صافي الأرباح</small><h3 id="st-cash">0</h3></div>
-                </div>
-            </div>
-            <div class="revenue-card kpi-card" style="background:var(--blue); color:#000; border:none; margin-bottom:20px;">
-                <small>دخل الشفت الحالي (الصافي)</small>
-                <h2 id="shift-total" style="font-family:'Rajdhani'; font-size:32px;">0.00</h2>
-                <button onclick="App.resetShift()" style="background:#000; color:#fff; font-size:10px; padding:5px; margin-top:10px; border-radius:5px;">🏁 تصفير الشفت</button>
-            </div>
-        </div>
+<div class="card">
+<b>📍 GPS</b>
+<div id="gps" class="small">بانتظار الإشارة...</div>
+</div>
 
-        <!-- القسم 4: الأرشيف (Archive) -->
-        <div id="sec-archive" class="view">
-            <input type="date" id="archive-date" onchange="App.load()">
-            <table id="logTable">
-                <thead><tr><th>سكوتر</th><th>وقت</th><th>مدة</th><th>صافي</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
+<div class="card">
+<b>🚀 الرحلة الحالية</b>
+<div id="trip" class="small">لا توجد رحلة</div>
+</div>
 
-    </main>
+<div class="card">
+<b>📜 Events</b>
+<div id="events"></div>
+</div>
 
-    <!-- Navigation -->
-    <nav class="bottom-nav hidden" id="main-nav">
-        <div class="nav-item active" onclick="App.nav('ops')"><i class="fas fa-bolt"></i><div>العمليات</div></div>
-        <div class="nav-item" onclick="App.nav('fleet')"><i class="fas fa-shield-alt"></i><div>التحكم</div></div>
-        <div class="nav-item" onclick="App.nav('stats')"><i class="fas fa-chart-bar"></i><div>إحصائيات</div></div>
-        <div class="nav-item" onclick="App.nav('archive')"><i class="fas fa-calendar-alt"></i><div>الأرشيف</div></div>
-    </nav>
+</section>
 
 <script>
-    // الإعدادات الرسمية (yala بلام واحدة)
-    const firebaseConfig = {
-        apiKey: "AIzaSyCJOSLUFRAZV4YWYFDB9VLvju",
-        authDomain: "yala-scooter.firebaseapp.com",
-        databaseURL: "https://yalla-scooter-default-rtdb.firebaseio.com",
-        projectId: "yala-scooter",
-        storageBucket: "yala-scooter.firebasestorage.app",
-        messagingSenderId: "1014076976512",
-        appId: "1:1014076976512:web:c053191787884674720970"
-    };
+/* ========== CONFIG ========== */
+const NODE_ID = "SCOOTER-001";
+const UNLOCK_PIN = "1214";
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+/* ========== FIREBASE ========== */
+firebase.initializeApp({
+  databaseURL: "PUT_YOUR_DATABASE_URL_HERE"
+});
+const db = firebase.database();
 
-    const App = {
-        role: '', trips: [], idPhoto: '',
+/* ========== STATE ========== */
+let tripActive = false;
 
-        login: function() {
-            const pin = document.getElementById('pinInput').value;
-            if(pin === "9924") this.role = 'admin';
-            else if(pin === "1213") this.role = 'staff';
-            else if(pin === "1214") return this.registerScooter();
-            else return Swal.fire('Error', 'PIN Incorrect', 'error');
+/* ========== UNLOCK ========== */
+function unlock(){
+  const pin = document.getElementById("pin").value;
+  if(pin !== UNLOCK_PIN){
+    logEvent("PIN_FAIL");
+    alert("كود غلط ❌");
+    return;
+  }
 
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('main-nav').classList.remove('hidden');
-            this.init();
-        },
+  db.ref("active_trips/"+NODE_ID).set({
+    start: Date.now()
+  });
 
-        init: function() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('archive-date').value = today;
-            document.getElementById('staff').value = localStorage.getItem('yStaff') || '';
-            this.sync();
-        },
+  tripActive = true;
+  updateStatus();
+  logEvent("PIN_SUCCESS");
+}
 
-        registerScooter: function() {
-            Swal.fire({ title: 'تسجيل سكوتر جديد', input: 'text', inputPlaceholder: 'رقم السكوتر...' }).then(r => {
-                if(r.value) {
-                    db.ref('fleet_online/' + r.value).set({ name: r.value, status: 'Ready' });
-                    Swal.fire('تم!', `السكوتر ${r.value} متاح الآن`, 'success');
-                }
-            });
-        },
+/* ========== END TRIP ========== */
+function endTrip(){
+  db.ref("active_trips/"+NODE_ID).remove();
+  tripActive = false;
+  updateStatus();
+  logEvent("TRIP_ENDED");
+}
 
-        nav: function(id) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('sec-'+id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-        },
+/* ========== STATUS UI ========== */
+function updateStatus(){
+  const el = document.getElementById("status");
+  if(tripActive){
+    el.innerText = "مفتوح (رحلة شغالة)";
+    el.className = "unlocked";
+  }else{
+    el.innerText = "مقفول";
+    el.className = "locked";
+  }
+}
 
-        setNow: (id) => { const n = new Date(); document.getElementById(id).value = n.getHours().toString().padStart(2,'0')+":"+n.getMinutes().toString().padStart(2,'0'); },
-        
-        handleID: function(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => { this.idPhoto = e.target.result; };
-                reader.readAsDataURL(input.files[0]);
-            }
-        },
+/* ========== GPS TRACKING ========== */
+if("geolocation" in navigator){
+  navigator.geolocation.watchPosition(pos=>{
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const speed = pos.coords.speed || 0;
 
-        save: async function(isErr) {
-            const scoot = document.getElementById('scoot').value, staff = document.getElementById('staff').value;
-            const start = document.getElementById('t1').value; let end = document.getElementById('t2').value;
-            let disc = 0, note = "سليم ✅";
+    document.getElementById("gps").innerText =
+      `Lat: ${lat.toFixed(5)} | Lon: ${lon.toFixed(5)} | Speed: ${Math.round(speed*3.6)} km/h`;
 
-            if(!scoot || !start) return Swal.fire('بيانات ناقصة');
-            if(isErr) {
-                const why = prompt("🔧 سبب العطل؟"); if(!why) return;
-                disc = parseFloat(prompt("💰 مبلغ الخصم؟") || 0);
-                note = "عطل: " + why;
-                const n = new Date(); end = n.getHours().toString().padStart(2,'0')+":"+n.getMinutes().toString().padStart(2,'0');
-            }
-            if(!end) return Swal.fire('حدد وقت الرجوع');
+    db.ref("nodes/"+NODE_ID).set({
+      lat, lon,
+      speed: Math.round(speed*3.6),
+      last: Date.now()
+    });
 
-            const t1 = new Date("2026-01-01 " + start), t2 = new Date("2026-01-01 " + end);
-            if(t2 < t1) t2.setDate(t2.getDate() + 1);
-            const mins = Math.max(0, Math.floor((t2 - t1) / 60000)) || 0;
-            const final = Math.max(0, (mins * 2) - disc) || 0;
+    runRules(speed);
 
-            const day = new Date().toISOString().split('T')[0];
-            await db.ref('history/' + day).push({ staff, scoot, start, end, mins, final, note, disc, idCard: this.idPhoto, timestamp: Date.now() });
-            localStorage.setItem('yStaff', staff);
-            location.reload();
-        },
+  },err=>{
+    document.getElementById("gps").innerText="GPS غير متاح";
+  },{
+    enableHighAccuracy:true,
+    maximumAge:2000
+  });
+}
 
-        sync: function() {
-            const d = document.getElementById('archive-date').value;
-            const reset = localStorage.getItem('reset_' + d) || 0;
+/* ========== RULE ENGINE ========== */
+function runRules(speed){
+  if(speed > 3 && !tripActive){
+    logEvent("MOVEMENT_WITHOUT_TRIP");
+  }
+}
 
-            db.ref('history/' + d).on('value', snap => {
-                const tbody = document.querySelector("#logTable tbody");
-                tbody.innerHTML = ""; let shiftT = 0; this.trips = [];
-                if(snap.exists()) {
-                    Object.values(snap.val()).reverse().forEach(t => {
-                        this.trips.push(t);
-                        tbody.innerHTML += `<tr><td><b>${t.scoot}</b></td><td>${t.start}-${t.end}</td><td>${t.mins}د</td><td>${parseFloat(t.final||0).toFixed(1)}</td></tr>`;
-                        if(t.timestamp > reset) shiftT += parseFloat(t.final || 0);
-                    });
-                }
-                document.getElementById('shift-total').innerText = shiftT.toFixed(2);
-                this.runAI();
-            });
+/* ========== EVENTS ========== */
+function logEvent(type){
+  db.ref("events").push({
+    type,
+    node: NODE_ID,
+    ts: Date.now()
+  });
+}
 
-            db.ref('active_trips').on('value', snap => {
-                const list = document.getElementById('active-list');
-                list.innerHTML = ""; let count = 0;
-                if(snap.exists()) {
-                    Object.values(snap.val()).forEach(t => {
-                        count++;
-                        list.innerHTML += `<div class="glass-card" style="border-right-color:var(--success)">🛵 <b>${t.scooter}</b> | ${t.customer}</div>`;
-                    });
-                }
-                document.getElementById('active-count').innerText = count;
-            });
-        },
+/* ========== LIVE TRIP STATE ========== */
+db.ref("active_trips/"+NODE_ID).on("value",s=>{
+  tripActive = s.exists();
+  document.getElementById("trip").innerText =
+    tripActive ? "🚴 رحلة شغالة" : "❌ لا توجد رحلة";
+  updateStatus();
+});
 
-        filter: function() {
-            const s = document.getElementById('searchID').value.trim().toUpperCase();
-            let m = 0, c = 0;
-            this.trips.forEach(t => { if(t.scoot.toUpperCase().includes(s) && s !== "") { m += t.mins; c += t.final; } });
-            document.getElementById('st-mins').innerText = m;
-            document.getElementById('st-cash').innerText = c.toFixed(2);
-        },
-
-        runAI: function() {
-            const msg = this.trips.length > 5 ? "🔥 ضغط عالٍ اليوم، ننصح بتجهيز شواحن إضافية." : "🟢 الوضع هادئ ومستقر حالياً.";
-            document.getElementById('ai-text').innerText = msg;
-        },
-
-        resetShift: function() {
-            if(confirm("تصفير العداد وبدء شفت جديد؟")) {
-                localStorage.setItem('reset_' + document.getElementById('archive-date').value, Date.now());
-                this.sync();
-            }
-        }
-    };
+/* ========== EVENTS UI ========== */
+db.ref("events").limitToLast(6).on("value",s=>{
+  let html="";
+  s.forEach(e=>{
+    html+=`<div class="small">• ${e.val().type}</div>`;
+  });
+  document.getElementById("events").innerHTML=html;
+});
 </script>
+
 </body>
 </html>
