@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter V66.2 | Professional UI</title>
+    <title>Yalla Scooter V66.4 Pro</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -23,50 +23,38 @@
         * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; margin: 0; padding: 0; }
         body { background: var(--bg); color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        /* --- شاشة الدخول --- */
+        /* --- الدخول --- */
         #login-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
         .login-card { width: 90%; max-width: 400px; text-align: center; padding: 50px; border-radius: 30px; border: 2px solid var(--primary); background: var(--card); box-shadow: 0 0 30px var(--primary); }
+
+        /* --- واجهة السكوتر (تم تحسين الوضوح للسائق) --- */
+        #scooter-ui { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; background: #000; position: relative; }
+        .neon-ring { width: 280px; height: 280px; border: 8px solid #111; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 40px var(--primary); border-top-color: var(--primary); animation: glow 2s infinite; }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 20px var(--primary); } 50% { box-shadow: 0 0 50px var(--primary); } }
+        .speed-val { font-family: 'Orbitron'; font-size: 100px; text-shadow: 0 0 20px var(--primary); line-height: 1; }
+        #scooter-timer-box { margin-top: 30px; font-family: 'Orbitron'; font-size: 35px; color: #ffcc00; font-weight: 900; background: rgba(255,204,0,0.1); padding: 10px 30px; border-radius: 50px; border: 1px solid #ffcc00; display: none; }
 
         /* --- واجهة الإدارة --- */
         #app-ui { display: none; height: 100vh; flex-direction: row; }
         .sidebar { width: 260px; background: var(--sidebar); border-left: 1px solid #1a253a; display: flex; flex-direction: column; padding: 20px; }
-        .nav-item { padding: 15px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; color: #5c6b89; font-weight: bold; font-size: 14px; }
+        .nav-item { padding: 15px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; color: #5c6b89; font-weight: bold; }
         .nav-item.active { color: #fff; background: linear-gradient(90deg, rgba(0,212,255,0.2), transparent); border-right: 3px solid var(--primary); }
-        
         .main-container { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg); }
 
-        /* --- مربعات الإحصائيات (مثل الصورة) --- */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-box { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--border); text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        .stat-box h4 { color: #5c6b89; font-size: 14px; margin-bottom: 10px; }
-        .stat-box span { color: var(--primary); font-family: 'Orbitron'; font-size: 28px; font-weight: 900; }
-
-        /* --- كارت الرحلة المطور (مثل الصورة) --- */
+        /* --- كارت الرحلة --- */
         #active-trips-list { display: flex; flex-wrap: wrap; gap: 20px; }
-        .trip-card { 
-            width: 280px; background: var(--card); border-radius: 25px; padding: 25px; 
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-            border: 1px solid var(--border); position: relative;
-        }
-        .trip-card .scooter-id { color: var(--primary); font-family: 'Orbitron'; font-size: 35px; font-weight: 900; margin-bottom: 5px; }
-        .trip-card .responsible { color: #5c6b89; font-size: 12px; margin-bottom: 20px; }
-        .trip-card .timer { font-family: 'Orbitron'; font-size: 45px; font-weight: 900; color: #fff; margin-bottom: 25px; letter-spacing: 2px; }
+        .trip-card { width: 280px; background: var(--card); border-radius: 25px; padding: 20px; border: 1px solid var(--border); position: relative; text-align: center; }
+        .scooter-id-label { color: var(--primary); font-family: 'Orbitron'; font-size: 32px; font-weight: 900; }
+        .live-speed-badge { display: inline-block; background: #000; color: var(--neon-green); padding: 5px 15px; border-radius: 10px; font-family: 'Orbitron'; margin: 10px 0; border: 1px solid var(--neon-green); font-size: 14px; }
+        .timer-display { font-family: 'Orbitron'; font-size: 40px; font-weight: 900; color: #fff; margin-bottom: 15px; }
         
-        .trip-card .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
-        .btn-action { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
-        .btn-timer { background: #1a253a; color: #ffcc00; border: 1px solid #ffcc00; }
+        /* تكت السقوط والخطر */
+        .trip-card.fallen-mode { border: 2px solid var(--neon-purple); background: rgba(188, 19, 254, 0.1); animation: shake 0.5s infinite; }
+        .trip-card.out-zone-mode { border: 2px solid var(--neon-red); background: rgba(255, 61, 61, 0.1); }
+        @keyframes shake { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(2deg); } 75% { transform: rotate(-2deg); } }
+
+        .btn-ui { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; margin-top: 5px; }
         .btn-finish { background: var(--primary); color: #000; }
-        .btn-emergency { background: #ff3d3d; color: #fff; grid-column: span 2; margin-top: 10px; }
-
-        .trip-card.fallen { border-color: var(--neon-purple); box-shadow: 0 0 20px var(--neon-purple); animation: shake 0.5s infinite; }
-        @keyframes shake { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-1deg)} 75%{transform:rotate(1deg)} }
-
-        /* --- بقية العناصر --- */
-        .btn-add { background: linear-gradient(to right, #00d4ff, #0055ff); color: white; padding: 15px; border-radius: 15px; border: none; width: 100%; font-weight: 900; cursor: pointer; margin-bottom: 25px; }
-        .section { display: none; }
-        .section.active { display: block; }
-        .admin-only { display: none; }
-        input { width: 100%; padding: 15px; background: #08101f; border: 1px solid #1a253a; color: #fff; border-radius: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -74,44 +62,48 @@
     <div id="login-overlay">
         <div class="login-card">
             <h1 style="color:var(--primary); font-family:'Orbitron';">YALLA SYSTEM</h1>
-            <input type="password" id="passInput" placeholder="Password">
-            <button onclick="handleAuth()" class="btn-add" style="margin-top:20px">LOGIN</button>
+            <input type="password" id="passInput" placeholder="كلمة المرور">
+            <button onclick="handleAuth()" class="btn-ui btn-finish" style="margin-top:20px">دخول</button>
         </div>
     </div>
 
+    <!-- واجهة السكوتر -->
+    <div id="scooter-ui">
+        <div id="scooter-alert-txt" style="color:var(--neon-red); font-weight:900; position:absolute; top:10%;"></div>
+        <div class="neon-ring">
+            <span class="speed-val" id="node-speed">0</span>
+            <span style="color:var(--primary); font-weight:bold;">KM/H</span>
+        </div>
+        <div id="scooter-timer-box"><i class="fas fa-clock"></i> <span id="scooter-timer-val">00:00</span></div>
+        <div id="node-id-display" style="margin-top:40px; color:#1a253a;">ID: --</div>
+    </div>
+
+    <!-- واجهة الإدارة -->
     <div id="app-ui">
         <nav class="sidebar">
-            <h2 style="color:var(--primary); text-align:center; margin-bottom:30px; font-family:Orbitron;">YALLA</h2>
-            <div class="nav-item active" onclick="nav('trips')"><i class="fas fa-play"></i> التشغيل الحالي</div>
-            <div class="nav-item" onclick="nav('fleet')"><i class="fas fa-map-marker-alt"></i> الخريطة والأسطول</div>
-            <div class="nav-item" onclick="nav('finance')"><i class="fas fa-wallet"></i> الخزينة</div>
-            <div class="nav-item admin-only" onclick="nav('settings')"><i class="fas fa-cog"></i> الإعدادات</div>
+            <h2 style="color:var(--primary); text-align:center; font-family:Orbitron;">YALLA</h2>
+            <div class="nav-item active" onclick="nav('trips')"><i class="fas fa-play"></i> الرحلات</div>
+            <div class="nav-item" onclick="nav('fleet')"><i class="fas fa-map-marker-alt"></i> الخريطة</div>
         </nav>
 
         <main class="main-container">
             <div id="sec-trips" class="section active">
-                <div class="stats-grid">
-                    <div class="stat-box"><h4>إيرادات اليوم</h4><span id="k-cash">0</span></div>
-                    <div class="stat-box"><h4>نشط الآن</h4><span id="k-active">0</span></div>
-                    <div class="stat-box"><h4>مكتمل اليوم</h4><span id="k-done">0</span></div>
-                </div>
-
-                <button class="btn-add" onclick="openNewTrip()">+ بدء تشغيل جديد 🚀</button>
-                
-                <div id="active-trips-list">
-                    </div>
+                <button class="btn-ui btn-finish" style="margin-bottom:20px; font-size:18px;" onclick="openNewTrip()">+ رحلة جديدة</button>
+                <div id="active-trips-list"></div>
             </div>
-
-            <div id="sec-fleet" class="section"><div id="fleet-list"></div></div>
-            <div id="sec-finance" class="section"><div id="finance-logs"></div></div>
-            <div id="sec-settings" class="section admin-only">
-                <div class="stat-box">
-                    <h3>إعدادات التسعيرة</h3>
-                    <input type="number" id="set-base" onchange="saveConfig()" placeholder="فتحة العداد">
-                    <input type="number" id="set-min" onchange="saveConfig()" placeholder="سعر الدقيقة">
-                </div>
+            <div id="sec-fleet" class="section">
+                <div id="fleet-list"></div>
             </div>
         </main>
+    </div>
+
+    <!-- صفحة الخريطة الكاملة -->
+    <div id="gps-page" style="display:none; position:fixed; inset:0; z-index:9999; background:#000;">
+        <div style="padding:15px; background:var(--card); display:flex; justify-content:space-between;">
+            <span id="tracking-id" style="color:var(--primary); font-family:Orbitron;">TRACKING...</span>
+            <button onclick="closeGps()" style="background:var(--neon-red); border:none; color:#fff; padding:5px 15px; border-radius:5px;">إغلاق</button>
+        </div>
+        <div id="full-map" style="height:100%;"></div>
     </div>
 
 <script>
@@ -119,114 +111,163 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let isAdmin = false, config = { base: 40, min: 2.66 }, activeTrips = {};
+    let myId = localStorage.getItem('yalla_id_v66') || "Y-" + Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem('yalla_id_v66', myId);
+    document.getElementById('node-id-display').innerText = "ID: " + myId;
 
+    let activeTrips = {}, scooterInterval = null, isAdmin = false;
+
+    // --- نظام الدخول ---
     function handleAuth() {
         const p = document.getElementById('passInput').value;
-        if(p === "1214" || p === "1213" || p === "9924") {
+        if(p === "1214") { 
+            document.getElementById('login-overlay').style.display='none'; 
+            document.getElementById('scooter-ui').style.display='flex'; 
+            runScooterMode(); 
+        } else if(p === "1213" || p === "9924") { 
             isAdmin = (p === "9924");
-            document.getElementById('login-overlay').style.display='none';
-            document.getElementById('app-ui').style.display='flex';
-            runApp();
+            document.getElementById('login-overlay').style.display='none'; 
+            document.getElementById('app-ui').style.display='flex'; 
+            runAdminMode(); 
         }
     }
 
-    function runApp() {
-        if(isAdmin) document.querySelectorAll('.admin-only').forEach(e=>e.style.display='block');
-        
-        // جلب الإحصائيات
-        db.ref('shifts/current/cash').on('value', s => document.getElementById('k-cash').innerText = (s.val()||0) + " ج");
-        db.ref('settings').on('value', s => { if(s.exists()) config = s.val(); });
+    // --- [1] وضع السكوتر (هاتف السائق) ---
+    function runScooterMode() {
+        // تتبع الموقع والسرعة
+        if(navigator.geolocation) {
+            navigator.geolocation.watchPosition(pos => {
+                const data = {
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude,
+                    speed: Math.round(pos.coords.speed * 3.6) || 0,
+                    lastUpdate: Date.now()
+                };
+                document.getElementById('node-speed').innerText = data.speed;
+                db.ref('live_nodes/' + myId).update(data);
+            }, null, { enableHighAccuracy: true });
+        }
 
-        // جلب الرحلات النشطة وتحديث الموقت كل ثانية
-        db.ref('active_trips').on('value', s => {
-            activeTrips = s.val() || {};
-            renderTrips();
+        // [جديد] حساس السقوط باستخدام الـ Orientation
+        window.addEventListener('deviceorientation', (event) => {
+            // إذا مال الهاتف أكثر من 70 درجة (يعني السكوتر وقع)
+            const fallen = Math.abs(event.beta) < 20 && Math.abs(event.gamma) < 20;
+            if(fallen) db.ref('live_nodes/' + myId).update({ fallen: true });
+            else db.ref('live_nodes/' + myId).update({ fallen: false });
         });
-        setInterval(updateTimers, 1000);
+
+        // مزامنة المؤقت مع الإدارة
+        db.ref('active_trips').on('value', s => {
+            let myTrip = null;
+            s.forEach(snap => { if(snap.val().scooterId === myId) myTrip = snap.val(); });
+            
+            const timerBox = document.getElementById('scooter-timer-box');
+            if(myTrip) {
+                timerBox.style.display = 'block';
+                if(!scooterInterval) {
+                    scooterInterval = setInterval(() => {
+                        const sec = Math.floor((Date.now() - myTrip.start) / 1000);
+                        document.getElementById('scooter-timer-val').innerText = 
+                            Math.floor(sec/60).toString().padStart(2,'0') + ":" + (sec%60).toString().padStart(2,'0');
+                    }, 1000);
+                }
+            } else {
+                timerBox.style.display = 'none';
+                clearInterval(scooterInterval);
+                scooterInterval = null;
+            }
+        });
     }
 
-    function renderTrips() {
+    // --- [2] وضع الإدارة (هاتفك أنت) ---
+    function runAdminMode() {
+        db.ref('active_trips').on('value', s => { 
+            activeTrips = s.val() || {}; 
+            renderAdminTrips(); 
+        });
+
+        setInterval(() => {
+            for(let k in activeTrips) {
+                const sec = Math.floor((Date.now() - activeTrips[k].start) / 1000);
+                const el = document.getElementById('timer-' + k);
+                if(el) el.innerText = Math.floor(sec/60).toString().padStart(2,'0') + ":" + (sec%60).toString().padStart(2,'0');
+            }
+        }, 1000);
+    }
+
+    function renderAdminTrips() {
         const list = document.getElementById('active-trips-list');
         list.innerHTML = "";
-        let count = 0;
-        
         for(let k in activeTrips) {
-            count++;
             const t = activeTrips[k];
             const card = document.createElement('div');
             card.className = 'trip-card';
-            card.id = `card-${k}`;
-            
+            card.id = 'card-' + k;
             card.innerHTML = `
-                <div class="scooter-id">${t.scooterId}</div>
-                <div class="responsible">المسؤول: ${t.phone}</div>
-                <div class="timer" id="timer-${k}">00:00</div>
-                <div class="btn-group">
-                    <button class="btn-action btn-timer">مؤقت</button>
-                    <button class="btn-action btn-finish" onclick="finishTrip('${k}')">إنهاء</button>
-                    <button class="btn-action btn-emergency" onclick="finishTrip('${k}', true)">🚨 إنهاء بعطل أو خصم</button>
-                </div>
+                <div class="scooter-id-label">${t.scooterId}</div>
+                <div class="live-speed-badge" id="speed-badge-${k}">السرعة: 0 كم</div>
+                <div class="timer-display" id="timer-${k}">00:00</div>
+                <button class="btn-ui btn-finish" onclick="finishTrip('${k}')">إنهاء وتحصيل</button>
+                <button class="btn-ui" style="background:#1a253a; color:#fff;" onclick="openGps('${t.scooterId}')">خريطة</button>
             `;
             list.appendChild(card);
-            
-            // ربط حالة السقوط
-            db.ref('live_nodes/'+t.scooterId+'/fallen').on('value', s => {
-                if(s.val()) card.classList.add('fallen'); else card.classList.remove('fallen');
+
+            // تحديث السرعة والحالة لحظياً في الكارت
+            db.ref('live_nodes/' + t.scooterId).on('value', snap => {
+                const d = snap.val() || {};
+                document.getElementById('speed-badge-' + k).innerText = `السرعة: ${d.speed || 0} كم`;
+                if(d.fallen) card.classList.add('fallen-mode'); else card.classList.remove('fallen-mode');
             });
         }
-        document.getElementById('k-active').innerText = count;
     }
 
-    function updateTimers() {
-        for(let k in activeTrips) {
-            const start = activeTrips[k].start;
-            const diff = Math.floor((Date.now() - start) / 1000);
-            const m = Math.floor(diff / 60).toString().padStart(2, '0');
-            const s = (diff % 60).toString().padStart(2, '0');
-            const el = document.getElementById(`timer-${k}`);
-            if(el) el.innerText = `${m}:${s}`;
-        }
-    }
-
-    async function finishTrip(key, isEmergency = false) {
-        const t = activeTrips[key];
-        const mins = Math.max(1, Math.floor((Date.now() - t.start) / 60000));
-        let cost = Math.max(config.base, Math.round(config.base + (mins - 15) * config.min));
-        
-        const { value: res } = await Swal.fire({
-            title: 'إنهاء الرحلة',
-            html: `<h2 style="color:var(--primary)">الحساب: ${cost} ج</h2><p>المدة: ${mins} دقيقة</p>
-                   <input id="disc" class="swal2-input" placeholder="خصم إضافي">`,
-            background: '#0d1629', color: '#fff',
-            confirmButtonText: 'تأكيد التحصيل'
-        });
-
-        if(res !== undefined) {
-            const final = cost - (parseFloat(document.getElementById('disc').value) || 0);
-            db.ref('shifts/history').push({ ...t, final, end: Date.now() });
-            db.ref('shifts/current/cash').transaction(v => (v||0) + final);
-            db.ref('active_trips/'+key).remove();
-        }
-    }
-
+    // --- وظائف عامة ---
     async function openNewTrip() {
-        const { value: res } = await Swal.fire({
-            title: 'تشغيل جديد',
-            html: '<input id="sw-name" class="swal2-input" placeholder="اسم المسؤول (Hussin)"><input id="sw-id" class="swal2-input" placeholder="رقم السكوتر">',
-            background: '#0d1629', color: '#fff',
-            preConfirm: () => [document.getElementById('sw-name').value, document.getElementById('sw-id').value]
+        const { value: formValues } = await Swal.fire({
+            title: 'بدء رحلة جديدة',
+            html: '<input id="swal-scid" class="swal2-input" placeholder="رقم السكوتر">' +
+                  '<input id="swal-phone" class="swal2-input" placeholder="رقم هاتف العميل">',
+            preConfirm: () => [document.getElementById('swal-scid').value, document.getElementById('swal-phone').value]
         });
-        if(res && res[1]) {
-            db.ref('active_trips').push({ phone: res[0], scooterId: res[1], start: Date.now() });
+        if (formValues && formValues[0]) {
+            db.ref('active_trips').push({
+                scooterId: formValues[0],
+                phone: formValues[1],
+                start: Date.now()
+            });
         }
     }
 
-    function nav(id) {
+    function finishTrip(key) {
+        // إضافة منطق الحساب المالي هنا
+        if(confirm("هل تريد إنهاء الرحلة وتحصيل المبلغ؟")) {
+            db.ref('active_trips/' + key).remove();
+        }
+    }
+
+    let map, marker;
+    function openGps(id) {
+        document.getElementById('gps-page').style.display = 'block';
+        document.getElementById('tracking-id').innerText = "تتبع سكوتر: " + id;
+        if(!map) {
+            map = L.map('full-map').setView([30.04, 31.23], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            marker = L.marker([30.04, 31.23]).addTo(map);
+        }
+        db.ref('live_nodes/' + id).on('value', s => {
+            const d = s.val();
+            if(d) {
+                const pos = [d.lat, d.lon];
+                marker.setLatLng(pos);
+                map.panTo(pos);
+            }
+        });
+    }
+
+    function closeGps() { document.getElementById('gps-page').style.display = 'none'; }
+    function nav(id) { 
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById('sec-'+id).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+        document.getElementById('sec-' + id).classList.add('active');
     }
 </script>
 </body>
