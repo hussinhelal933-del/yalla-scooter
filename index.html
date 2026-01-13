@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter Master V64</title>
+    <title>Yalla Scooter Master V64.1</title>
     
     <!-- الروابط الأساسية (لا تحذف) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -75,6 +75,12 @@
             .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; border-left: none; border-bottom: 1px solid #222; }
             .nav-item { white-space: nowrap; margin-bottom: 0; margin-left: 10px; }
         }
+
+        /* --- إضافات تنسيق جديدة V64.1 (لا تحذف) --- */
+        .history-card { background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; font-size: 14px; }
+        .search-box { width: 100%; padding: 12px; background: #111; border: 1px solid var(--primary); color: white; border-radius: 10px; margin-bottom: 20px; text-align: right; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status-online { background: var(--success); color: #000; }
     </style>
 </head>
 <body>
@@ -112,6 +118,7 @@
             <div class="nav-item" onclick="nav('clients')"><i class="fas fa-users"></i> قاعدة العملاء</div>
             <div class="nav-item" onclick="nav('finance')"><i class="fas fa-wallet"></i> المالية والوردية</div>
             <div class="nav-item admin-only" id="nav-settings" onclick="nav('settings')"><i class="fas fa-cog"></i> الإعدادات والمخزن</div>
+            <div class="nav-item" onclick="nav('history')"><i class="fas fa-history"></i> سجل الرحلات</div> <!-- إضافة جديدة -->
         </nav>
 
         <main class="main-container">
@@ -133,7 +140,7 @@
 
             <!-- قسم العملاء -->
             <div id="sec-clients" class="section">
-                <input type="text" placeholder="بحث بالرقم أو الاسم..." oninput="searchClients(this.value)">
+                <input type="text" class="search-box" placeholder="بحث بالرقم أو الاسم..." oninput="searchClients(this.value)">
                 <div id="clients-list"></div>
             </div>
 
@@ -156,6 +163,12 @@
                 <h3>🛵 إدارة الأسطول والمخزن</h3>
                 <div id="stock-list"></div>
                 <button class="btn btn-primary" onclick="addScooterToStock()">إضافة سكوتر جديد</button>
+            </div>
+
+            <!-- قسم سجل الرحلات الجديد V64.1 -->
+            <div id="sec-history" class="section">
+                <h3 style="margin-bottom:20px; color:var(--primary);">📜 سجل آخر الرحلات المنتهية</h3>
+                <div id="history-list"></div>
             </div>
         </main>
     </div>
@@ -229,7 +242,6 @@
             document.querySelectorAll('.admin-only').forEach(e => e.style.display='block');
         }
 
-        // تتبع الأسطول (قائمة الأجهزة)
         db.ref('live_nodes').on('value', snap => {
             const list = document.getElementById('fleet-devices-list'); list.innerHTML = "";
             snap.forEach(child => {
@@ -249,10 +261,8 @@
             });
         });
 
-        // الرحلات الجارية
         db.ref('active_trips').on('value', s => { activeTrips = s.val() || {}; renderTrips(); });
 
-        // الوردية والمالية
         db.ref('shifts/current').on('value', s => {
             if(s.exists()) {
                 document.getElementById('k-cash').innerText = (s.val().cash || 0) + " ج";
@@ -266,7 +276,6 @@
             }
         });
 
-        // الإعدادات والمخزن
         db.ref('settings').on('value', s => {
             if(s.exists()) {
                 config = s.val();
@@ -274,15 +283,13 @@
                 document.getElementById('set-base').value = config.base;
             }
         });
-        db.ref('inventory').on('value', snap => {
-            const list = document.getElementById('stock-list'); list.innerHTML = "";
-            snap.forEach(d => {
-                list.innerHTML += `<div class="kpi-card" style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>${d.key}</b> <span>${d.val().status}</span></div>`;
-            });
-        });
+
+        // تشغيل الإضافات الجديدة تلقائياً عند فتح التطبيق
+        if(typeof loadHistory === "function") loadHistory();
+        if(typeof injectFleetSearch === "function") injectFleetSearch();
     }
 
-    // --- 5. نظام التتبع الفردي (الخريطة اللي طلبتها) ---
+    // --- 5. نظام التتبع الفردي ---
     function openGps(id) {
         trackedId = id;
         document.getElementById('gps-page').style.display = 'flex';
@@ -408,6 +415,46 @@
             min: parseFloat(document.getElementById('set-min').value),
             base: parseFloat(document.getElementById('set-base').value)
         });
+    }
+
+    // --- وظائف إضافية V64.1 (الجديدة كلياً بدون مسح قديم) ---
+
+    function loadHistory() {
+        db.ref('shifts/history').limitToLast(15).on('value', snap => {
+            const container = document.getElementById('history-list');
+            container.innerHTML = "";
+            if(!snap.exists()) { container.innerHTML = "لا يوجد سجلات"; return; }
+            snap.forEach(child => {
+                const h = child.val();
+                const date = new Date(h.end).toLocaleString('ar-EG');
+                container.innerHTML += `
+                    <div class="history-card">
+                        <div style="display:flex; justify-content:space-between;">
+                            <b style="color:var(--primary)">💰 وردية منتهية</b>
+                            <small>${date}</small>
+                        </div>
+                        <div style="margin-top:5px;">إجمالي الكاش: <b style="color:var(--success)">${h.cash || 0} ج.م</b></div>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    function injectFleetSearch() {
+        const fleetSec = document.getElementById('sec-fleet');
+        if(fleetSec && !document.getElementById('fleet-search-input')) {
+            const searchInput = document.createElement('input');
+            searchInput.id = 'fleet-search-input';
+            searchInput.className = 'search-box';
+            searchInput.placeholder = '🔍 ابحث عن سكوتر معين بالاسم أو الرقم...';
+            searchInput.oninput = (e) => {
+                const query = e.target.value.toLowerCase();
+                document.querySelectorAll('#fleet-devices-list .kpi-card').forEach(card => {
+                    card.style.display = card.innerText.toLowerCase().includes(query) ? 'block' : 'none';
+                });
+            };
+            fleetSec.insertBefore(searchInput, document.getElementById('fleet-devices-list'));
+        }
     }
 </script>
 </body>
