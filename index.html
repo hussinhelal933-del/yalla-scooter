@@ -3,185 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | Blue Edition</title>
+    <title>Yalla Scooter | الإصدار الرسمي</title>
     
-    <!-- الموارد -->
+    <!-- الموارد الأساسية -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Rajdhani:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            /* تغيير اللون الأساسي إلى اللبني النيون */
-            --yalla-blue: #00d2ff; 
-            --yalla-dark-blue: #0072ff;
-            --rabbit-gray: #f4f4f4;
-            --text-dark: #333;
+            --yalla-blue: #39b5e0;
+            --rabbit-green: #8ed254;
+            --text-dark: #1a1a1a;
+            --gray-light: #f4f4f4;
+            --border-color: #eee;
         }
 
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: white; }
 
-        /* --- الخريطة --- */
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; filter: grayscale(0.5) brightness(1.02); }
+        /* --- شاشة الدخول (Auth) --- */
+        #auth-overlay { position: fixed; inset: 0; background: white; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .auth-card { width: 85%; text-align: center; }
+        .btn-auth { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; background: white; font-size: 16px; }
+        .btn-phone { background: var(--rabbit-green); color: white; border: none; }
 
-        /* --- القائمة الجانبية --- */
+        /* --- الخريطة (ستايل رابيت الهادئ) --- */
+        #map { position: absolute; inset: 0; z-index: 1; filter: grayscale(0.2) contrast(1.1); }
+
+        /* --- القائمة الجانبية (Side Menu) --- */
         #side-menu {
-            position: fixed; top: 0; right: -100%; width: 85%; height: 100%;
-            background: white; z-index: 5000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: -5px 0 20px rgba(0,0,0,0.1); padding: 40px 25px;
-            display: flex; flex-direction: column;
+            position: fixed; top: 0; right: -100%; width: 80%; height: 100%;
+            background: white; z-index: 5000; transition: 0.3s ease-out;
+            padding: 50px 25px; display: flex; flex-direction: column;
         }
         #side-menu.open { right: 0; }
-        .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 4999; display: none; }
+        .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 4999; display: none; }
 
-        /* مكان اللوجو الجديد */
-        .user-profile { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .user-logo { 
-            width: 60px; height: 60px; 
-            border-radius: 15px; 
-            overflow: hidden; /* عشان اللوجو ميتخطاش الحدود */
-            display: flex; align-items: center; justify-content: center; 
-            background: #f0f0f0;
-            border: 2px solid var(--yalla-blue);
-        }
-        .user-logo img { width: 100%; height: 100%; object-fit: cover; } /* اللوجو يملأ المربع */
+        .user-profile { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .profile-logo { width: 55px; height: 55px; background: #f9f9f9; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+        .user-meta b { font-size: 20px; display: block; color: var(--text-dark); }
+        .user-meta span { font-size: 14px; color: #888; }
 
-        .user-info b { font-size: 20px; color: var(--text-dark); display: block; }
-        .user-info span { font-size: 14px; color: #888; }
-
-        .prime-btn {
-            background: #fff; border: 2px solid var(--yalla-blue); color: var(--yalla-blue);
-            padding: 12px; border-radius: 12px; font-weight: bold; font-size: 15px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            margin: 10px 0 30px 0; cursor: pointer;
+        .prime-badge {
+            background: white; border: 2px solid var(--rabbit-green); color: var(--rabbit-green);
+            padding: 10px; border-radius: 12px; font-weight: 900; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 30px;
         }
 
-        .menu-link i { font-size: 20px; width: 25px; color: var(--yalla-blue); }
+        .menu-item { display: flex; align-items: center; gap: 20px; padding: 18px 0; color: #333; font-weight: 600; border-bottom: 1px solid #f9f9f9; cursor: pointer; }
+        .menu-item i { color: #888; font-size: 20px; width: 25px; }
 
-        /* --- الأزرار العائمة --- */
-        .fab-container { position: absolute; z-index: 1000; width: 100%; height: 100%; pointer-events: none; }
-        .fab-container button { pointer-events: auto; cursor: pointer; border: none; box-shadow: 0 4px 15px rgba(0,210,255,0.2); }
+        /* --- الأزرار العائمة (Floating HUD) --- */
+        .hud { position: absolute; inset: 0; pointer-events: none; z-index: 1000; }
+        .hud button { pointer-events: auto; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 
-        .btn-menu, .btn-locate { 
-            position: absolute; bottom: 40px; width: 60px; height: 60px; 
-            background: white; border-radius: 50%; display: flex; 
-            align-items: center; justify-content: center; font-size: 22px; 
-        }
-        .btn-menu { right: 25px; color: var(--yalla-blue); }
-        .btn-locate { left: 25px; color: var(--yalla-blue); }
-
-        /* زر Scan to Ride (أزرق نيون) */
+        .btn-circle { width: 55px; height: 55px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; position: absolute; bottom: 35px; }
+        .btn-menu { right: 25px; }
+        .btn-locate { left: 25px; }
         .btn-scan {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            background: linear-gradient(135deg, var(--yalla-blue), var(--yalla-dark-blue));
-            color: white; padding: 15px 35px; border-radius: 50px;
-            font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 10px;
-            width: 220px; justify-content: center;
+            position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(to right, #8ed254, #b2e672);
+            color: white; padding: 15px 40px; border-radius: 50px;
+            font-weight: 900; font-size: 18px; width: 220px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
-        /* الماركر على الخريطة باللون الأزرق */
-        .marker-pin { 
-            width: 45px; height: 45px; background: white; border-radius: 50%; 
+        /* --- أيقونة السكوتر (لوجو Y) --- */
+        .scooter-marker { background: none; border: none; }
+        .scooter-pin { 
+            width: 42px; height: 42px; background: white; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 15px rgba(0,210,255,0.4); border: 3px solid var(--yalla-blue);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2); border: 2px solid var(--rabbit-green);
         }
-        
-        #wallet-modal { position: fixed; inset: 0; background: white; z-index: 6000; display: none; flex-direction: column; padding: 30px; }
+
+        /* --- SVG Logo --- */
+        .yalla-logo { width: 120px; margin-bottom: 20px; }
+        .y-icon { width: 30px; height: auto; }
     </style>
 </head>
 <body>
 
-    <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
-    
-    <!-- القائمة الجانبية -->
-    <div id="side-menu">
-        <div class="user-profile">
-            <div class="user-logo">
-                <!-- ضع رابط اللوجو الخاص بك هنا مكان "YOUR_LOGO_URL" -->
-                <img src="https://via.placeholder.com/60x60/00d2ff/ffffff?text=Yalla" id="app-logo-img" alt="Yalla Logo">
-            </div>
-            <div class="user-info">
-                <b id="display-name">Hassan</b>
-                <span id="display-phone">+201153243863</span>
-            </div>
-        </div>
-        
-        <div class="prime-btn">
-            <i class="fas fa-crown"></i> Yalla Prime Plus
-        </div>
-
-        <div class="menu-items">
-            <div class="menu-link" onclick="showHistory()"><i class="fas fa-history"></i> سجل الرحلات</div>
-            <div class="menu-link" onclick="openWallet()"><i class="fas fa-wallet"></i> المحفظة</div>
-            <div class="menu-link"><i class="fas fa-gift"></i> رصيد مجاني</div>
-            <div class="menu-link"><i class="fas fa-info-circle"></i> كيف تستخدم التطبيق</div>
-            <div class="menu-link"><i class="fas fa-language"></i> Language / اللغة</div>
-        </div>
-
-        <div class="menu-link" onclick="logout()" style="border:none; color:red; margin-top: auto;">
-            <i class="fas fa-sign-out-alt" style="color:red;"></i> تسجيل الخروج
+    <!-- 1. شاشة الدخول -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <!-- اللوجو رقم 1 (عالي الدقة) -->
+            <svg class="yalla-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="#39b5e0" stroke-width="10" fill="none" stroke-linecap="round"/>
+                <circle cx="40" cy="85" r="8" fill="#333"/>
+                <line x1="10" y1="30" x2="25" y2="30" stroke="#39b5e0" stroke-width="5" stroke-linecap="round" />
+                <line x1="5" y1="45" x2="20" y2="45" stroke="#39b5e0" stroke-width="5" stroke-linecap="round" />
+            </svg>
+            <h2 style="font-family:'Rajdhani'; letter-spacing:2px; margin-bottom:40px;">YALLA SCOOTER</h2>
+            
+            <button onclick="loginPhone()" class="btn-auth btn-phone"><i class="fas fa-phone"></i> رقم الهاتف</button>
+            <button onclick="loginGoogle()" class="btn-auth"><img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18"> متابعة باستخدام Google</button>
         </div>
     </div>
 
-    <!-- الخريطة -->
+    <!-- 2. القائمة الجانبية -->
+    <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
+    <nav id="side-menu">
+        <div class="user-profile">
+            <div class="profile-logo">
+                <svg class="y-icon" viewBox="0 0 100 100">
+                    <path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="#8ed254" stroke-width="12" fill="none" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="user-meta">
+                <b id="u-name">Hassan</b>
+                <span id="u-phone">+201153243863</span>
+            </div>
+        </div>
+
+        <div class="prime-badge"><i class="fas fa-star"></i> Free Yalla Prime</div>
+
+        <div class="menu-list">
+            <div class="menu-item"><i class="fas fa-history"></i> History</div>
+            <div class="menu-item" onclick="openWallet()"><i class="fas fa-wallet"></i> Wallet</div>
+            <div class="menu-item"><i class="fas fa-gift"></i> Free Balance</div>
+            <div class="menu-item"><i class="fas fa-motorcycle"></i> How To Ride</div>
+            <div class="menu-item"><i class="fas fa-calendar-alt"></i> Day Rentals</div>
+            <div class="menu-item"><i class="fas fa-language"></i> Language / اللغة</div>
+        </div>
+
+        <div class="menu-item" onclick="logout()" style="margin-top:auto; color:red; border:none;">
+            <i class="fas fa-sign-out-alt" style="color:red;"></i> Logout
+        </div>
+    </nav>
+
+    <!-- 3. الخريطة -->
     <div id="map"></div>
 
-    <!-- الأزرار -->
-    <div class="fab-container">
-        <button class="btn-menu" onclick="toggleMenu()">
-            <i class="fas fa-bars"></i>
-        </button>
-
-        <button class="btn-scan" onclick="openScanner()">
-            <i class="fas fa-qrcode"></i> Scan to Ride
-        </button>
-
-        <button class="btn-locate" onclick="locateMe()">
-            <i class="fas fa-location-arrow"></i>
-        </button>
-    </div>
-
-    <!-- المحفظة -->
-    <div id="wallet-modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
-            <h2>المحفظة</h2>
-            <i class="fas fa-times" onclick="closeWallet()" style="font-size:24px;"></i>
-        </div>
-        <div style="background: linear-gradient(135deg, #f0faff, #ffffff); padding:40px; border-radius:30px; text-align:center; border: 1px solid #e0f0f5;">
-            <small style="color:#888">الرصيد المتاح</small>
-            <h1 id="balance-val" style="font-size:45px; margin:10px 0; color:var(--yalla-blue)">0.00 ج.م</h1>
-        </div>
-        <button class="btn-scan" style="position:static; width:100%; margin-top:25px;" onclick="topUp()">إضافة رصيد</button>
+    <!-- 4. الأزرار العائمة (HUD) -->
+    <div class="hud">
+        <button class="btn-circle btn-menu" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+        <button class="btn-scan" onclick="startRide()"><i class="fas fa-expand"></i> Scan to Ride</button>
+        <button class="btn-circle btn-locate" onclick="locate()"><i class="fas fa-crosshairs"></i></button>
     </div>
 
 <script>
-    // --- نفس منطق الـ Firebase السابق بدون مسح ---
+    // --- إعدادات Firebase ---
     const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let map, userMarker, scooterMarkers = {};
-    let userPhone = localStorage.getItem('yalla_user_ph') || "";
+    let map, scooterMarkers = {};
+    let user = JSON.parse(localStorage.getItem('yalla_user')) || null;
 
-    window.onload = () => { if(!userPhone) askForLogin(); else initApp(); };
+    window.onload = () => {
+        if(user) {
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('u-name').innerText = user.displayName || "عميل يلا";
+            document.getElementById('u-phone').innerText = user.phoneNumber || user.email;
+            initApp();
+        }
+    };
 
+    // --- تسجيل الدخول ---
+    function loginGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider).then(res => {
+            localStorage.setItem('yalla_user', JSON.stringify(res.user));
+            location.reload();
+        });
+    }
+
+    function loginPhone() {
+        Swal.fire({
+            title: 'رقم الهاتف',
+            input: 'tel',
+            inputPlaceholder: '01xxxxxxxxx',
+            confirmButtonColor: '#8ed254'
+        }).then(res => {
+            if(res.value) {
+                const fakeUser = { displayName: 'Hassan', phoneNumber: res.value };
+                localStorage.setItem('yalla_user', JSON.stringify(fakeUser));
+                location.reload();
+            }
+        });
+    }
+
+    // --- تشغيل التطبيق والخرائط ---
     function initApp() {
         map = L.map('map', { zoomControl: false, attributionControl: false }).setView([30.0444, 31.2357], 16);
-        // خريطة بتدرجات رمادية خفيفة تبرز اللون اللبني
+        
+        // ستايل الخريطة الفاتح (Rabbit Style)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
+        // جلب السكوترات المتاحة
         db.ref('live_nodes').on('value', snap => {
             snap.forEach(child => {
                 const d = child.val();
                 if(!scooterMarkers[child.key]) {
                     const icon = L.divIcon({
-                        className: 'sc-icon-wrapper',
-                        html: `<div class="marker-pin"><i class="fas fa-motorcycle" style="color:var(--yalla-blue)"></i></div>`
+                        className: 'scooter-marker',
+                        html: `<div class="scooter-pin">
+                                <svg width="22" height="22" viewBox="0 0 100 100">
+                                    <path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="#8ed254" stroke-width="15" fill="none" stroke-linecap="round"/>
+                                </svg>
+                               </div>`
                     });
                     scooterMarkers[child.key] = L.marker([d.lat, d.lon], {icon}).addTo(map);
                 } else {
@@ -189,59 +215,49 @@
                 }
             });
         });
-
-        db.ref('users/' + userPhone).on('value', s => {
-            if(s.exists()){
-                document.getElementById('balance-val').innerText = (s.val().balance || 0).toFixed(2) + " ج.م";
-                document.getElementById('display-name').innerText = s.val().name || "عميل يلا";
-            }
-        });
-        locateMe();
+        locate();
     }
 
-    // وظائف الواجهة
+    // --- التحكم بالواجهة ---
     function toggleMenu() {
-        const menu = document.getElementById('side-menu');
-        const overlay = document.getElementById('overlay');
-        menu.classList.toggle('open');
-        overlay.style.display = menu.classList.contains('open') ? 'block' : 'none';
+        const m = document.getElementById('side-menu');
+        const o = document.getElementById('overlay');
+        const isOpen = m.classList.toggle('open');
+        o.style.display = isOpen ? 'block' : 'none';
     }
 
-    function locateMe() {
+    function locate() {
         if(navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
-                const p = [pos.coords.latitude, pos.coords.longitude];
-                map.flyTo(p, 17);
-                if(!userMarker) userMarker = L.circleMarker(p, { radius: 10, color: '#00d2ff', fillColor: '#00d2ff', fillOpacity: 0.3 }).addTo(map);
-                else userMarker.setLatLng(p);
+                map.flyTo([pos.coords.latitude, pos.coords.longitude], 17);
             });
         }
     }
 
-    async function openScanner() {
+    async function startRide() {
         const { value: scId } = await Swal.fire({
             title: 'Scan QR Code',
             input: 'text',
             inputPlaceholder: 'أدخل رقم السكوتر',
-            confirmButtonColor: '#00d2ff'
+            confirmButtonText: 'ابدأ الرحلة',
+            confirmButtonColor: '#8ed254'
         });
         if(scId) {
-            db.ref('active_trips').push({ phone: userPhone, scooterId: scId, start: Date.now() });
-            Swal.fire('رحلة سعيدة', 'تم فتح السكوتر بنجاح!', 'success');
+            db.ref('active_trips').push({ 
+                phone: user.phoneNumber || user.email, 
+                scooterId: scId, 
+                start: Date.now() 
+            });
+            Swal.fire('تم بدء الرحلة', 'انطلق بأمان واستمتع بيومك', 'success');
         }
     }
 
-    function openWallet() { document.getElementById('wallet-modal').style.display = 'flex'; toggleMenu(); }
-    function closeWallet() { document.getElementById('wallet-modal').style.display = 'none'; }
-
-    async function topUp() {
-        const { value: amt } = await Swal.fire({ title: 'شحن رصيد', input: 'number', confirmButtonColor: '#00d2ff' });
-        if(amt) db.ref('users/' + userPhone + '/balance').transaction(v => (v||0) + parseFloat(amt));
-    }
-
-    function askForLogin() {
-        Swal.fire({ title: 'مرحباً بك في Yalla', input: 'tel', inputPlaceholder: 'رقم الموبايل', allowOutsideClick: false }).then(res => {
-            if(res.value) { userPhone = res.value; localStorage.setItem('yalla_user_ph', userPhone); location.reload(); }
+    function openWallet() {
+        Swal.fire({
+            title: 'المحفظة',
+            html: '<h1 style="color:#8ed254">0.00 ج.م</h1><p>رصيدك الحالي غير كافٍ لشحن باقة Prime</p>',
+            confirmButtonText: 'شحن رصيد',
+            confirmButtonColor: '#8ed254'
         });
     }
 
