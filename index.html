@@ -3,331 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | التطبيق الرسمي للعملاء</title>
-    
-    <!-- المكاتب الأساسية (ممنوع الحذف) -->
+    <title>Yalla Scooter | العميل</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- الربط بالملفات المنفصلة -->
+    <link rel="stylesheet" href="app-style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script> <!-- مكتبة الكاميرا الحقيقية -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root {
-            --u-blue: #0066ff; /* أزرق يلا الرسمي */
-            --u-bg: #ffffff;
-            --u-light: #f0f5ff;
-            --text-dark: #1a1a1a;
-            --gray-text: #8e8e93;
-            --border-light: #f2f2f7;
-            --shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-
-        /* تنسيق عام احترافي */
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: white; }
-
-        /* --- 1. شاشة الدخول (Login) --- */
-        #auth-screen { position: fixed; inset: 0; background: white; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
-        .auth-logo { width: 110px; margin-bottom: 20px; }
-        .auth-input { width: 100%; padding: 18px; border-radius: 15px; border: 1.5px solid #eee; margin-bottom: 12px; text-align: center; font-size: 18px; background: var(--u-light); outline: none; }
-        .btn-login { width: 100%; padding: 18px; border-radius: 50px; background: var(--u-blue); color: white; border: none; font-weight: 900; font-size: 18px; cursor: pointer; box-shadow: 0 10px 25px rgba(0,102,255,0.2); }
-
-        /* --- 2. الخريطة وHUD العميل --- */
-        #map { position: absolute; inset: 0; z-index: 1; filter: grayscale(0.1); }
-        .hud { position: absolute; inset: 0; pointer-events: none; z-index: 1000; }
-        .fab { pointer-events: auto; width: 60px; height: 60px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--u-blue); border: none; box-shadow: var(--shadow); cursor: pointer; position: absolute; }
-        .btn-menu { bottom: 40px; right: 25px; }
-        .btn-locate { bottom: 40px; left: 25px; }
-        .btn-help { top: 60px; right: 25px; width: 45px; height: 45px; font-size: 18px; }
-
-        .btn-scan-main {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            background: var(--u-blue); color: white; padding: 18px 45px; border-radius: 50px;
-            font-weight: 900; font-size: 20px; width: 240px; border: none;
-            box-shadow: 0 10px 30px rgba(0,102,255,0.3); pointer-events: auto;
-            display: flex; align-items: center; gap: 12px; justify-content: center;
-        }
-
-        /* تاق المسافة العلوي */
-        .walk-tag { 
-            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-            background: white; padding: 10px 25px; border-radius: 50px; 
-            box-shadow: var(--shadow); font-weight: 900; font-size: 13px; 
-            display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--u-light);
-        }
-
-        /* --- 3. المنيو الجانبي (مطابق لـ Rabbit) --- */
-        #side-menu { 
-            position: fixed; top: 0; right: -100%; width: 85%; height: 100%; 
-            background: white; z-index: 5000; padding: 60px 30px; 
-            display: flex; flex-direction: column; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: -10px 0 30px rgba(0,0,0,0.1); 
-        }
-        #side-menu.open { right: 0; }
-        .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 4999; display: none; backdrop-filter: blur(4px); }
-        
-        .profile-card { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
-        .prime-btn { 
-            border: 2px solid var(--u-blue); color: var(--u-blue); padding: 12px; 
-            border-radius: 12px; text-align: center; font-weight: 900; margin-bottom: 30px; cursor: pointer;
-        }
-        .menu-link { 
-            display: flex; align-items: center; gap: 20px; padding: 18px 5px; 
-            border-bottom: 1px solid var(--border-light); font-weight: 600; cursor: pointer; color: var(--text-dark);
-        }
-        .menu-link i { color: var(--u-blue); font-size: 22px; width: 30px; text-align: center; }
-
-        /* --- 4. شاشات الصفحات (Full Pages) --- */
-        .full-page { position: fixed; inset: 0; background: white; z-index: 6000; display: none; flex-direction: column; animation: slideUp 0.4s ease; }
-        @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
-        .page-header { padding: 25px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border-light); font-weight: 900; color: var(--u-blue); font-size: 22px; }
-
-        /* --- 5. شات الدعم AI والموظف --- */
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; background: #f8f9fb; display: flex; flex-direction: column; }
-        .bubble { padding: 15px 20px; border-radius: 20px; margin-bottom: 12px; max-width: 80%; font-size: 15px; line-height: 1.5; }
-        .bubble.ai { background: white; color: var(--text-dark); align-self: flex-start; border-bottom-right-radius: 2px; border: 1px solid #eee; }
-        .bubble.me { background: var(--u-blue); color: white; align-self: flex-end; border-bottom-left-radius: 2px; }
-        .chat-footer { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
-
-        /* --- 6. المحفظة وسجل الرحلات --- */
-        .wallet-banner { background: var(--u-blue); padding: 40px; border-radius: 35px; margin: 25px; color: white; text-align: center; box-shadow: 0 10px 30px rgba(0,102,255,0.2); }
-        .history-card { background: white; border: 1.5px solid var(--border-light); padding: 20px; border-radius: 20px; margin: 0 25px 15px 25px; display: flex; justify-content: space-between; align-items: center; }
-
-        /* الماركرات والبطارية */
-        .bike-pin { width: 48px; height: 48px; background: white; border-radius: 50%; border: 2.5px solid var(--u-blue); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); }
-        .batt-tag { position: absolute; top: -30px; background: white; border: 1px solid #eee; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 900; }
-    </style>
 </head>
 <body>
 
-    <!-- 1. شاشة الدخول -->
-    <div id="auth-screen">
-        <div style="width:110px; height:110px; background:var(--u-blue); border-radius:30px; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">
-            <svg width="60" viewBox="0 0 100 100"><path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/></svg>
-        </div>
-        <h1 style="color:var(--u-blue); font-family:Orbitron; letter-spacing:2px; margin-bottom:40px;">YALLA SCOOTER</h1>
-        <input type="tel" id="uPhone" class="auth-input" placeholder="رقم الهاتف">
-        <input type="email" id="uEmail" class="auth-input" placeholder="البريد الإلكتروني (اختياري)">
-        <button onclick="handleLogin()" class="btn-login">تسجيل الدخول</button>
-    </div>
-
-    <!-- 2. واجهة التطبيق الرئيسية -->
-    <div id="user-app" style="display:none;">
-        <div id="map"></div>
-        <div class="hud">
-            <div class="walk-tag"><i class="fas fa-walking" style="color:var(--u-blue)"></i> <span id="mins-walk">--</span> دقيقة مشي لأقرب سكوتر</div>
-            <button class="fab btn-help" onclick="openPage('chat')"><i class="fas fa-question"></i></button>
-            <button class="fab btn-menu" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-            <button class="fab btn-locate" onclick="locateMe()"><i class="fas fa-crosshairs"></i></button>
-            <button class="btn-scan-ride" onclick="openPage('scanner')">
-                <i class="fas fa-qrcode"></i> SCAN TO RIDE
-            </button>
-        </div>
-
-        <!-- المنيو الجانبي -->
-        <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
-        <nav id="side-menu">
-            <div class="profile-card">
-                <i class="fas fa-user-circle" style="font-size:60px; color:var(--u-blue)"></i>
-                <div><b id="disp-ph">--</b><br><small id="disp-status">عميل ذهبي ✓</small></div>
+    <div class="user-app">
+        <!-- شاشة الترحيب والمحفظة -->
+        <header class="user-header">
+            <div class="user-info">
+                <span>أهلاً بك،</span>
+                <h3 id="userName">عميل يالا</h3>
             </div>
-            <div class="prime-btn" onclick="Swal.fire('Yalla Prime Plus', 'قريباً.. رحلات غير محدودة باشتراك شهري', 'info')">Yalla Prime Plus <i class="fas fa-crown"></i></div>
-            <div class="menu-links">
-                <div class="menu-link" onclick="openPage('history')"><i class="fas fa-history"></i> سجل الرحلات</div>
-                <div class="menu-link" onclick="openPage('wallet')"><i class="fas fa-wallet"></i> المحفظة</div>
-                <div class="menu-link" onclick="openPage('chat')"><i class="fas fa-headset"></i> الدعم والمساعدة AI</div>
-                <div class="menu-link"><i class="fas fa-gift"></i> رصيد مجاني</div>
-                <div class="menu-link"><i class="fas fa-language"></i> اللغة / Language</div>
+            <div class="wallet-card">
+                <small>رصيدك الحالي</small>
+                <h2 id="userBalance">0.00 ج</h2>
+                <button class="topup-btn">شحن المحفظة</button>
             </div>
-            <div class="menu-link" onclick="logout()" style="margin-top:auto; border:none; color:var(--danger);"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</div>
+        </header>
+
+        <main class="app-main">
+            <!-- منطقة الحالة (سكوتر قريب) -->
+            <div class="status-box" id="nearestScooter">
+                <i class="fas fa-bicycle"></i>
+                <span>أقرب سكوتر لك على بعد 2 دقيقة</span>
+            </div>
+
+            <!-- زرار الأكشن الرئيسي (فتح السكوتر) -->
+            <div class="action-area">
+                <button class="scan-btn" onclick="startRide()">
+                    <i class="fas fa-qrcode"></i>
+                    <span>ابدأ الرحلة</span>
+                </button>
+            </div>
+
+            <!-- سجل الرحلات المختصر -->
+            <div class="recent-rides">
+                <h4>آخر الرحلات</h4>
+                <div id="userRideHistory">
+                    <!-- سيتم تحميل الرحلات هنا -->
+                </div>
+            </div>
+        </main>
+
+        <!-- شريط التنقل السفلي -->
+        <nav class="user-nav">
+            <div class="nav-item active"><i class="fas fa-map-marked-alt"></i><span>الرئيسية</span></div>
+            <div class="nav-item"><i class="fas fa-history"></i><span>رحلاتي</span></div>
+            <div class="nav-item"><i class="fas fa-user"></i><span>حسابي</span></div>
         </nav>
     </div>
 
-    <!-- 3. شاشة الشات والدعم (AI + موظف) -->
-    <div id="pg-chat" class="full-page">
-        <div class="page-header"><i class="fas fa-chevron-left" onclick="closePage('chat')"></i> الدعم المباشر <i></i></div>
-        <div id="chat-window">
-            <div class="bubble ai">مرحباً! أنا مساعد يلا سكوتر الذكي. كيف يمكنني مساعدتك اليوم؟</div>
-        </div>
-        <div class="chat-footer">
-            <input type="text" id="chatInput" placeholder="اكتب سؤالك هنا..." style="flex:1; padding:15px; border:none; background:var(--u-light); border-radius:15px; outline:none;">
-            <button class="fab" style="position:static; width:50px; height:50px;" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-
-    <!-- 4. شاشة المحفظة وفوري -->
-    <div id="pg-wallet" class="full-page">
-        <div class="page-header"><i class="fas fa-chevron-left" onclick="closePage('wallet')"></i> محفظتي <i></i></div>
-        <div class="wallet-banner">
-            <small>الرصيد المتاح (لحظي)</small>
-            <h1 style="font-family:Orbitron; font-size:50px;"><span id="u-bal">0.00</span> ج.م</h1>
-        </div>
-        <div style="padding:25px;">
-            <p style="font-weight:900; color:#888;">شحن رصيد آمن:</p>
-            <div class="menu-link" onclick="fawryPay()"><i class="fas fa-shield-alt"></i> بوابة فوري (فيزا / ميزة) <img src="https://fawry.com/wp-content/uploads/2021/04/Fawry-logo-English.png" width="60" style="margin-right:auto"></div>
-            <div class="menu-link" onclick="Swal.fire('كاش', 'حول لـ 01014004125 وسيظهر الرصيد فوراً', 'info')"><i class="fas fa-mobile-alt"></i> تحويل كاش (فودافون كاش)</div>
-        </div>
-    </div>
-
-    <!-- 5. شاشة سجل الرحلات -->
-    <div id="pg-history" class="full-page">
-        <div class="page-header"><i class="fas fa-chevron-left" onclick="closePage('history')"></i> رحلاتي السابقة <i></i></div>
-        <div id="history-content" style="padding-top:20px;"></div>
-    </div>
-
-    <!-- 6. شاشة الكاميرا والـ QR -->
-    <div id="pg-scanner" class="full-page">
-        <div class="page-header"><i class="fas fa-times" onclick="closePage('scanner')"></i> امسح الكود <i></i></div>
-        <div id="qr-reader" style="width:100%;"></div>
-        <div style="padding:40px; text-align:center;">
-            <input type="text" id="manualId" placeholder="أو أدخل رقم السكوتر يدوياً" class="auth-input">
-            <button class="btn-login" style="margin-top:20px;" onclick="startRideManual()">تأكيد وبدء الرحلة</button>
-        </div>
-    </div>
-
-<script>
-    // --- الربط مع Firebase ---
-    const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let map, userMarker, scooterMarkers = {}, myLoc = [30.0444, 31.2357];
-    let userPhone = localStorage.getItem('y_titan_client');
-
-    window.onload = () => { if(userPhone) { document.getElementById('auth-screen').style.display='none'; initApp(); } };
-
-    function handleLogin() {
-        const ph = document.getElementById('uPhone').value;
-        if(ph.length < 11) return Swal.fire('خطأ', 'رقم الهاتف غير صحيح', 'error');
-        userPhone = ph; localStorage.setItem('y_titan_client', ph);
-        location.reload();
-    }
-
-    // --- تشغيل التطبيق والخرائط والـ GPS ---
-    function initApp() {
-        document.getElementById('user-app').style.display = 'block';
-        document.getElementById('disp-ph').innerText = userPhone;
-
-        map = L.map('map', { zoomControl: false, attributionControl: false }).setView(myLoc, 16);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-        if(navigator.geolocation) {
-            navigator.geolocation.watchPosition(pos => {
-                myLoc = [pos.coords.latitude, pos.coords.longitude];
-                if(!userMarker) userMarker = L.circleMarker(myLoc, { radius: 10, color: '#fff', fillColor: '#0066ff', fillOpacity: 1, weight: 3 }).addTo(map);
-                else userMarker.setLatLng(myLoc);
-                updateMinsWalk();
-            });
-        }
-
-        // جلب السكوترات المتاحة حقيقياً
-        db.ref('live_nodes').on('value', snap => {
-            const data = snap.val() || {};
-            for(let id in scooterMarkers) map.removeLayer(scooterMarkers[id]);
-            scooterMarkers = {};
-
-            for(let id in data) {
-                const d = data[id];
-                if(d.status === 'available') {
-                    const icon = L.divIcon({ className:'m', html:`
-                        <div style="position:relative">
-                            <div class="batt-tag">${d.batt}%</div>
-                            <div class="bike-pin"><svg width="22" viewBox="0 0 100 100"><path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="#0066ff" stroke-width="15" fill="none" stroke-linecap="round"/></svg></div>
-                        </div>` 
-                    });
-                    scooterMarkers[id] = L.marker([d.lat, d.lon], {icon}).addTo(map);
-                }
-            }
-            updateMinsWalk();
-        });
-
-        // الرصيد اللحظي
-        db.ref('users/'+userPhone+'/balance').on('value', s => document.getElementById('u-bal').innerText = (s.val()||0).toFixed(2));
-        loadHistory();
-        listenToMessages();
-    }
-
-    // --- حساب الدقائق ---
-    function updateMinsWalk() {
-        let minD = Infinity;
-        for(let id in scooterMarkers) {
-            let d = map.distance(myLoc, scooterMarkers[id].getLatLng());
-            if(d < minD) minD = d;
-        }
-        document.getElementById('mins-walk').innerText = (minD === Infinity) ? "--" : Math.round(minD/80);
-    }
-
-    // --- نظام الشات (AI + موظف) ---
-    function sendMessage() {
-        const txt = document.getElementById('chatInput').value;
-        if(!txt) return;
-        db.ref('support_chats/'+userPhone+'/messages').push({ text: txt, sender: 'user', time: Date.now() });
-        document.getElementById('chatInput').value = "";
-        
-        // رد AI بسيط مؤقت حتى يرد الموظف
-        setTimeout(() => {
-            let reply = "فهمت سؤالك، جاري تحويلك للموظف المختص للمساعدة فوراً.";
-            if(txt.includes("رصيد")) reply = "بخصوص الرصيد، تأكد من شحن محفظتك عبر فوري أو التحويل لـ 01014004125 وسنقوم بالتفعيل فوراً.";
-            db.ref('support_chats/'+userPhone+'/messages').push({ text: reply, sender: 'ai', time: Date.now() });
-        }, 1500);
-    }
-
-    function listenToMessages() {
-        db.ref('support_chats/'+userPhone+'/messages').on('value', s => {
-            const win = document.getElementById('chat-window'); win.innerHTML = "";
-            s.forEach(c => {
-                const m = c.val();
-                win.innerHTML += `<div class="bubble ${m.sender === 'user' ? 'me' : 'ai'}">${m.text}</div>`;
-            });
-            win.scrollTop = win.scrollHeight;
-        });
-    }
-
-    // --- الكاميرا والـ QR ---
-    function openScanner() {
-        document.getElementById('pg-scanner').style.display='flex';
-        const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
-        scanner.render(id => {
-            document.getElementById('manualId').value = id;
-            scanner.clear();
-            startRideManual();
-        });
-    }
-
-    async function startRideManual() {
-        const id = document.getElementById('manualId').value;
-        if(!id) return;
-        // تصوير السكوتر للتوثيق
-        const { value: file } = await Swal.fire({ title:'وثق حالة السكوتر', text:'صور السكوتر قبل البدء لضمان حقك', input:'file', inputAttributes:{'accept':'image/*','capture':'camera'} });
-        if(file) {
-            db.ref('active_trips').push({ phone: userPhone, scooterId: id, start: Date.now() });
-            db.ref('live_nodes/'+id).update({ status: 'active' });
-            Swal.fire('تم البدء!', 'رحلة سعيدة وموفقة.', 'success');
-            closePage('scanner');
-        }
-    }
-
-    function fawryPay() { Swal.fire('FawryPay', 'جاري الاتصال ببوابة فوري المؤمنة...', 'info'); }
-    function toggleMenu() { const m=document.getElementById('side-menu'); m.classList.toggle('open'); document.getElementById('overlay').style.display=m.classList.contains('open')?'block':'none'; }
-    function openPage(id) { document.getElementById('pg-'+id).style.display='flex'; if(id==='scanner') openScanner(); }
-    function closePage(id) { document.getElementById('pg-'+id).style.display='none'; }
-    function locateMe() { map.flyTo(myLoc, 18); }
-    function logout() { localStorage.clear(); location.reload(); }
-    function loadHistory() {
-        db.ref('shifts/history').on('value', s => {
-            const list = document.getElementById('history-content'); list.innerHTML = "";
-            s.forEach(c => {
-                if(c.val().phone === userPhone) {
-                    list.innerHTML += `<div class="history-card"><b>🛵 ${c.val().scooterId}</b><b style="color:var(--u-blue)">${c.val().final} ج</b></div>`;
-                }
-            });
-        });
-    }
-</script>
+    <script src="app-logic.js"></script>
 </body>
 </html>
