@@ -2,57 +2,82 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yalla App | Finance Dashboard</title>
-
-    <!-- المكتبات الخارجية -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yalla Finance | موبايل</title>
+    
+    <!-- الخطوط والمكتبات -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-
-    <!-- ربط ملف الستايل -->
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2 class="logo">YALLA</h2>
-        <a href="index.html" class="nav-link"><i class="fas fa-home"></i> الرئيسية</a>
-        <div class="nav-link active"><i class="fas fa-wallet"></i> المالية</div>
+    <div class="app-container">
+        <header class="app-header">
+            <h2>المالية</h2>
+            <div class="status-dot"></div>
+        </header>
+
+        <main class="content">
+            <!-- كروت الإحصائيات -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <span>دخل اليوم</span>
+                    <b id="finToday">0 ج</b>
+                </div>
+                <div class="stat-card">
+                    <span>دخل الشهر</span>
+                    <b id="finMonth">0 ج</b>
+                </div>
+                <div class="stat-card">
+                    <span>الرحلات</span>
+                    <b id="finTrips">0</b>
+                </div>
+                <div class="stat-card">
+                    <span>المتوسط</span>
+                    <b id="finAvg">0 ج</b>
+                </div>
+            </div>
+
+            <!-- أرصدة وديون -->
+            <div class="wallets-section">
+                <div class="wallet-box">
+                    <i class="fas fa-user-check"></i>
+                    <div>أرصدة العملاء <br> <span id="finWallets">0 ج</span></div>
+                </div>
+                <div class="wallet-box debt">
+                    <i class="fas fa-user-minus"></i>
+                    <div>ديون العملاء <br> <span id="finDebt">0 ج</span></div>
+                </div>
+            </div>
+
+            <!-- سجل العمليات -->
+            <h3 class="section-title">سجل العمليات اليومية</h3>
+            <div class="history-list" id="financeBody">
+                <!-- البيانات ستظهر هنا كـ كروت موبايل -->
+            </div>
+        </main>
+
+        <!-- شريط التنقل السفلي (شكل التطبيق) -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>العملاء</span>
+            </a>
+            <a href="finance.html" class="nav-item active">
+                <i class="fas fa-wallet"></i>
+                <span>المالية</span>
+            </a>
+            <a href="admin.html" class="nav-item">
+                <i class="fas fa-user-shield"></i>
+                <span>الأدمن</span>
+            </a>
+        </nav>
     </div>
 
-    <div class="main">
-        <h2>الداشبورد المالية</h2>
-
-        <div class="kpi-row">
-            <div class="kpi-box">دخل اليوم<b id="finToday">0 ج</b></div>
-            <div class="kpi-box">دخل الشهر<b id="finMonth">0 ج</b></div>
-            <div class="kpi-box">عدد الرحلات<b id="finTrips">0</b></div>
-            <div class="kpi-box">متوسط الرحلة<b id="finAvg">0 ج</b></div>
-            <div class="kpi-box">أرصدة العملاء<b id="finWallets">0 ج</b></div>
-            <div class="kpi-box">ديون العملاء<b id="finDebt" class="danger">0 ج</b></div>
-        </div>
-
-        <h3>السجل المالي</h3>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>التاريخ</th>
-                        <th>عدد الرحلات</th>
-                        <th>الدخل</th>
-                    </tr>
-                </thead>
-                <tbody id="financeBody">
-                    <!-- البيانات ستظهر هنا من خلال الـ JS -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- أهم خطوة: ربط ملف الـ JavaScript في نهاية الصفحة -->
     <script src="script.js"></script>
 </body>
 </html>
