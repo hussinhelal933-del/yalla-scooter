@@ -3,62 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | العميل</title>
+    <title>Yalla Scooter | الخريطة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- الربط بالملفات المنفصلة -->
-    <link rel="stylesheet" href="app-style.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="stylesheet" href="app-ui.css"> <!-- ملف التصميم -->
 </head>
 <body>
 
-    <div class="user-app">
-        <!-- شاشة الترحيب والمحفظة -->
-        <header class="user-header">
-            <div class="user-info">
-                <span>أهلاً بك،</span>
-                <h3 id="userName">عميل يالا</h3>
-            </div>
-            <div class="wallet-card">
-                <small>رصيدك الحالي</small>
-                <h2 id="userBalance">0.00 ج</h2>
-                <button class="topup-btn">شحن المحفظة</button>
+    <div id="map-bg"></div> <!-- هنا توضع الخريطة مستقبلاً -->
+
+    <div class="app-overlay">
+        <header class="top-bar">
+            <button class="icon-btn"><i class="fas fa-bars"></i></button>
+            <div class="wallet-badge" onclick="location.href='wallet.html'">
+                <span id="headerBalance">0.00</span> ج
             </div>
         </header>
 
-        <main class="app-main">
-            <!-- منطقة الحالة (سكوتر قريب) -->
-            <div class="status-box" id="nearestScooter">
-                <i class="fas fa-bicycle"></i>
-                <span>أقرب سكوتر لك على بعد 2 دقيقة</span>
+        <div class="bottom-card">
+            <div class="scooter-info-mini">
+                <i class="fas fa-bolt" style="color:#00ff88"></i>
+                <span>اختر سكوتر قريب منك وابدأ الرحلة</span>
             </div>
-
-            <!-- زرار الأكشن الرئيسي (فتح السكوتر) -->
-            <div class="action-area">
-                <button class="scan-btn" onclick="startRide()">
-                    <i class="fas fa-qrcode"></i>
-                    <span>ابدأ الرحلة</span>
-                </button>
-            </div>
-
-            <!-- سجل الرحلات المختصر -->
-            <div class="recent-rides">
-                <h4>آخر الرحلات</h4>
-                <div id="userRideHistory">
-                    <!-- سيتم تحميل الرحلات هنا -->
-                </div>
-            </div>
-        </main>
-
-        <!-- شريط التنقل السفلي -->
-        <nav class="user-nav">
-            <div class="nav-item active"><i class="fas fa-map-marked-alt"></i><span>الرئيسية</span></div>
-            <div class="nav-item"><i class="fas fa-history"></i><span>رحلاتي</span></div>
-            <div class="nav-item"><i class="fas fa-user"></i><span>حسابي</span></div>
-        </nav>
+            <button class="main-action-btn" onclick="requestUnlock()">
+                <i class="fas fa-qrcode"></i>
+                مسح الـ QR للبدء
+            </button>
+        </div>
     </div>
 
-    <script src="app-logic.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="app-core.js"></script> <!-- مخ النظام -->
 </body>
 </html>
