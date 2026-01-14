@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Yalla Scooter | Broadcast Node</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        body { background: #000; color: #00d2ff; font-family: 'Orbitron', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .status-light { width: 20px; height: 20px; background: #34c759; border-radius: 50%; box-shadow: 0 0 15px #34c759; margin-bottom: 10px; }
+        .speed-box { font-size: 120px; color: #fff; text-shadow: 0 0 30px #00d2ff; line-height: 1; }
+        .info { margin-top: 20px; font-size: 18px; color: #555; }
+        #scId { color: #00d2ff; font-size: 24px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="status-light" id="pulse"></div>
+    <div style="font-size: 14px; letter-spacing: 2px;">BROADCASTING LIVE</div>
+    <div class="speed-box" id="speed">0</div>
+    <div style="font-size: 20px; font-weight: bold;">KM/H</div>
+    
+    <div class="info">DEVICE ID: <b id="scId">--</b></div>
+    <div class="info">BATTERY: <b id="batt">--%</b></div>
+
+<script>
+    // استخدم بيانات Firebase الخاصة بك
+    const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // تحديد اسم السكوتر (يجب تغييره لكل تليفون سكوتر، مثلاً Scooter-01)
+    const SCOOTER_ID = prompt("أدخل معرف السكوتر (مثلاً Y-101):") || "Y-DEFAULT";
+    document.getElementById('scId').innerText = SCOOTER_ID;
+
+    // منع الشاشة من الإغلاق (Wake Lock)
+    if ('wakeLock' in navigator) { navigator.wakeLock.request('screen'); }
+
+    // محرك البث (GPS + Battery + Speed)
+    function startTracking() {
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(pos => {
+                const speedKmh = Math.round(pos.coords.speed * 3.6) || 0;
+                document.getElementById('speed').innerText = speedKmh;
+
+                navigator.getBattery?.().then(bt => {
+                    const level = Math.round(bt.level * 100);
+                    document.getElementById('batt').innerText = level + "%";
+
+                    // إرسال البيانات فوراً للداش بورد
+                    db.ref('live_nodes/' + SCOOTER_ID).update({
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        speed: speedKmh,
+                        batt: level,
+                        status: 'available', // يتغير لـ 'active' عند مسح الـ QR
+                        lastUpdate: Date.now()
+                    });
+                });
+
+                // تأثير النبض عند الإرسال
+                document.getElementById('pulse').style.opacity = (document.getElementById('pulse').style.opacity == 0) ? 1 : 0;
+
+            }, err => console.error(err), { enableHighAccuracy: true });
+        }
+    }
+
+    startTracking();
+</script>
+</body>
+</html>
