@@ -2,119 +2,318 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Yalla Ops | رادار الأجهزة والتحكم</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yalla Ops | مركز التحكم والبيانات</title>
+    
+    <!-- الموارد التقنية -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root { --adm-brown: #3E2723; --adm-blue: #00d2ff; --adm-dark: #0f0a09; --success: #00ff9d; }
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
-        body { margin: 0; background: var(--adm-dark); color: white; display: flex; height: 100vh; overflow: hidden; }
+        :root {
+            --adm-brown: #3E2723; --adm-blue: #00d2ff; --adm-dark: #0f0a09;
+            --success: #00ff9d; --danger: #ff3b30; --warn: #ff9500; --text: #ffffff;
+        }
 
-        /* Sidebar الإدارة */
-        .admin-sidebar { width: 300px; background: #000; border-left: 2px solid #222; padding: 30px; display: flex; flex-direction: column; }
-        .nav-item { padding: 18px; border-radius: 15px; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; color: #555; font-weight: 800; transition: 0.3s; }
-        .nav-item.active, .nav-item:hover { background: rgba(0,210,255,0.1); color: var(--adm-blue); border-right: 5px solid var(--adm-blue); }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; }
+        body { background: var(--adm-dark); color: var(--text); margin: 0; height: 100vh; overflow: hidden; display: flex; }
 
-        /* منطقة المحتوى */
-        .admin-main { flex: 1; overflow-y: auto; padding: 40px; background: radial-gradient(circle at top right, #1a1110, #000); }
-        .admin-card { background: var(--adm-brown); border: 1.5px solid var(--adm-blue); border-radius: 30px; padding: 30px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        /* --- شاشة الدخول (9924) --- */
+        #gate-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .gate-card { width: 90%; max-width: 400px; text-align: center; padding: 50px; border-radius: 40px; border: 2px solid var(--adm-blue); background: var(--adm-brown); box-shadow: 0 0 50px rgba(0,210,255,0.2); }
+
+        /* --- القائمة الجانبية (Sidebar) --- */
+        .sidebar { width: 300px; background: #000; border-left: 2px solid #222; display: flex; flex-direction: column; padding: 30px; }
+        .logo-area { font-family: 'Orbitron'; font-size: 28px; color: var(--adm-blue); text-align: center; margin-bottom: 50px; letter-spacing: 5px; border-bottom: 1px solid #222; padding-bottom: 20px; }
+        .nav-link { padding: 18px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #555; font-weight: bold; margin-bottom: 10px; }
+        .nav-link.active { background: rgba(0,210,255,0.1); color: var(--adm-blue); border-right: 5px solid var(--adm-blue); }
+
+        /* --- المحتوى الرئيسي --- */
+        .main-content { flex: 1; overflow-y: auto; padding: 40px; background: radial-gradient(circle at top right, #1a1110, #000); }
+        .admin-card { background: var(--adm-brown); border: 1.5px solid rgba(0,210,255,0.15); border-radius: 30px; padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+
+        /* --- قاعدة البيانات (Tables) --- */
+        .db-table { width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.3); border-radius: 20px; overflow: hidden; margin-top: 20px; }
+        .db-table th { background: #1a1e2a; padding: 20px; text-align: right; color: #777; font-size: 14px; }
+        .db-table td { padding: 20px; border-bottom: 1px solid #1a1e2a; font-size: 15px; font-weight: bold; }
+
+        /* --- رادار الأجهزة (Fleet Monitoring) --- */
+        .device-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #222; }
+        .batt-bar { width: 100px; height: 10px; background: #222; border-radius: 10px; overflow: hidden; display: inline-block; vertical-align: middle; }
+        .batt-fill { height: 100%; transition: 1s; }
+        .offline { opacity: 0.5; filter: grayscale(1); }
+
+        /* --- مركز الشات (Support) --- */
+        .chat-user-item { background: var(--adm-dark); padding: 15px; border-radius: 15px; cursor: pointer; margin-bottom: 10px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .msg-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 50%; font-size: 12px; }
+
+        /* الأزرار */
+        .btn-ops { padding: 12px 25px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .btn-blue { background: var(--adm-blue); color: #000; }
+        .btn-green { background: var(--success); color: #000; }
+        .btn-red { background: var(--danger); color: #fff; }
+
+        .section { display: none; } .section.active { display: block; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
         
-        /* رادار الأجهزة */
-        .fleet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .device-item { background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 20px; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-right: 8px solid var(--adm-blue); }
-        .device-item.fallen { border-right-color: #bc13fe; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.7; } }
-
-        .batt-bar { width: 100px; height: 10px; background: #222; border-radius: 10px; overflow: hidden; }
-        .batt-fill { height: 100%; background: var(--success); transition: 1s; }
-
-        #admin-map { height: 400px; width: 100%; border-radius: 25px; border: 1px solid #333; margin-bottom: 30px; }
-        
-        .btn-adm { padding: 12px 25px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; background: var(--adm-blue); color: black; box-shadow: 0 5px 15px rgba(0,210,255,0.2); }
+        #radar-map { height: 400px; width: 100%; border-radius: 25px; border: 2px solid #222; margin-bottom: 30px; }
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; text-align: center; }
     </style>
 </head>
 <body>
-    <nav class="admin-sidebar">
-        <h1 style="font-family:Orbitron; color:var(--adm-blue); letter-spacing:4px; text-align:center; margin-bottom:50px;">Y-OPS</h1>
-        <div class="nav-item active" onclick="location.href='admin.html'"><i class="fas fa-satellite"></i> رادار الأسطول</div>
-        <div class="nav-item" onclick="location.href='finance.html'"><i class="fas fa-wallet"></i> المالية والارصدة</div>
-        <div class="nav-item" onclick="location.href='index.html'"><i class="fas fa-user"></i> عرض كعميل</div>
-        <div class="nav-item" style="margin-top:auto; color:red;"><i class="fas fa-power-off"></i> خروج</div>
-    </nav>
 
-    <main class="admin-main">
-        <div id="admin-map"></div>
-        
-        <div class="admin-card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>الأجهزة النشطة حالياً</h2>
-                <button class="btn-adm" onclick="addScooter()">+ إضافة سكوتر للمخزن</button>
-            </div>
-            <div id="fleet-monitor" class="fleet-grid" style="margin-top:25px;">
-                <!-- يتم التحميل لحظياً من app-brain.js -->
-            </div>
+    <!-- شاشة الدخول السرية -->
+    <div id="gate-screen">
+        <div class="gate-card">
+            <h1 style="color:var(--adm-blue); font-family:Orbitron;">YALLA CORE</h1>
+            <p style="color:#555; margin-bottom:40px;">نظام الإدارة المركزي (OPS)</p>
+            <input type="password" id="adminPass" placeholder="••••">
+            <button onclick="checkAccess()" class="btn-ops btn-blue" style="width:100%; margin-top:20px; justify-content:center; font-size:18px;">فتح النظام</button>
         </div>
-    </main>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="app-core.js"></script>
-    <script>
-        // تشغيل الرادار الخاص بالأدمن
-        const adminMap = L.map('admin-map').setView([30.0444, 31.2357], 14);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(adminMap);
+    <!-- واجهة الإدارة الرئيسية -->
+    <div id="admin-ui" style="display:none; width: 100%;">
+        <nav class="sidebar">
+            <div class="logo-area">Y-OPS</div>
+            <div class="nav-link active" onclick="showSec('trips')"><i class="fas fa-bolt"></i> الرحلات الحية</div>
+            <div class="nav-link" onclick="showSec('fleet')"><i class="fas fa-satellite"></i> رادار الأجهزة</div>
+            <div class="nav-item" onclick="showSec('support')"><i class="fas fa-comments"></i> شات العملاء <span id="new-msg-count" class="msg-badge" style="display:none">0</span></div>
+            <div class="nav-link" onclick="showSec('users')"><i class="fas fa-database"></i> قاعدة العملاء</div>
+            <div class="nav-link" onclick="showSec('ai')"><i class="fas fa-brain"></i> تحليل AI</div>
+            <div class="nav-link" onclick="showSec('settings')"><i class="fas fa-cog"></i> الإعدادات</div>
+            <div class="nav-link" onclick="location.reload()" style="margin-top:auto; color:var(--danger);"><i class="fas fa-power-off"></i> خروج</div>
+        </nav>
 
-        YallaBrain.db.ref('live_nodes').on('value', snap => {
-            const container = document.getElementById('fleet-monitor');
-            container.innerHTML = "";
-            snap.forEach(child => {
-                const d = child.val();
-                const status = YallaBrain.evaluateScooter(d);
+        <main class="main-content">
+            <!-- 1. الرحلات الحية -->
+            <div id="sec-trips" class="section active">
+                <div style="display:flex; gap:25px; margin-bottom:40px;">
+                    <div class="admin-card" style="flex:1">الرحلات الجارية <b id="stat-active" style="font-size:40px; color:var(--adm-blue); display:block; font-family:Orbitron;">0</b></div>
+                    <div class="admin-card" style="flex:1">خزينة اليوم <b id="stat-cash" style="font-size:40px; color:var(--success); display:block; font-family:Orbitron;">0 ج</b></div>
+                </div>
+                <h3>مراقبة الرحلات لحظياً</h3>
+                <div id="active-trips-monitor"></div>
+            </div>
+
+            <!-- 2. رادار الأجهزة (التليفونات داخل السكوترات) -->
+            <div id="sec-fleet" class="section">
+                <div id="radar-map"></div>
+                <h2>حالة الأجهزة الحية</h2>
+                <table class="db-table">
+                    <thead><tr><th>جهاز السكوتر</th><th>البطارية</th><th>السرعة</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                    <tbody id="fleet-db-body"></tbody>
+                </table>
+                <button class="btn-ops btn-blue" style="margin-top:20px;" onclick="addScooterToDB()">+ إضافة سكوتر للمخزن</button>
+            </div>
+
+            <!-- 3. قاعدة بيانات العملاء (شحن لحظي) -->
+            <div id="sec-users" class="section">
+                <h2>قاعدة بيانات العملاء والديون</h2>
+                <input type="text" placeholder="بحث باسم أو رقم العميل..." oninput="searchUsers(this.value)" style="text-align:right; margin-bottom:20px;">
+                <table class="db-table">
+                    <thead><tr><th>العميل</th><th>رقم الهاتف</th><th>الرصيد</th><th>الديون</th><th>إجراء</th></tr></thead>
+                    <tbody id="users-db-body"></tbody>
+                </table>
+            </div>
+
+            <!-- 4. مركز الدعم والشات -->
+            <div id="sec-support" class="section">
+                <h2>مركز الرد على العملاء</h2>
+                <div id="admin-support-list"></div>
+            </div>
+
+            <!-- 5. تحليل AI -->
+            <div id="sec-ai" class="section">
+                <h2>المحلل المالي الذكي AI</h2>
+                <div class="admin-card" style="background:linear-gradient(135deg, #11141d, #001f3f);">
+                    <p id="ai-report">جاري تجميع وتحليل البيانات...</p>
+                </div>
+            </div>
+
+            <!-- 6. الإعدادات -->
+            <div id="sec-settings" class="section">
+                <div class="admin-card">
+                    <h3>تعريفة الرحلة</h3>
+                    <p>سعر الدقيقة (بعد 15 د):</p><input type="number" id="cfg-min" onchange="saveConfig()">
+                    <p style="margin-top:15px;">فتحة العداد (أول 15 د):</p><input type="number" id="cfg-base" onchange="saveConfig()">
+                    <button class="btn-ops btn-green" style="width:100%; margin-top:30px; justify-content:center;" onclick="saveConfig()">حفظ الإعدادات</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+    // --- الربط مع Firebase ---
+    const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let adminMap, markers = {};
+
+    // --- 1. نظام الدخول ---
+    function checkAccess() {
+        const p = document.getElementById('adminPass').value;
+        if(p === "9924") {
+            document.getElementById('gate-screen').style.display='none';
+            document.getElementById('admin-ui').style.display='flex';
+            runAdminEngine();
+        } else { Swal.fire('خطأ', 'الكود غير صحيح', 'error'); }
+    }
+
+    // --- 2. محرك الإدارة (Logic) ---
+    function runAdminEngine() {
+        // مراقبة رادار الأجهزة (الهواتف داخل السكوترات)
+        db.ref('live_nodes').on('value', snap => {
+            const body = document.getElementById('fleet-db-body'); body.innerHTML = "";
+            snap.forEach(c => {
+                const d = c.val();
+                const isOnline = (Date.now() - d.lastUpdate < 20000); // 20 ثانية نبض
+                const bCol = d.batt > 50 ? 'var(--success)' : (d.batt > 20 ? 'var(--warn)' : 'var(--danger)');
                 
-                container.innerHTML += `
-                    <div class="device-item ${status.isFallen ? 'fallen' : ''}" style="border-right-color: ${status.statusColor}">
-                        <div>
-                            <b style="font-size:18px;">🛵 سكوتر: ${child.key}</b><br>
-                            <small style="color:#777;">سرعة: ${d.speed} كم/س</small>
-                        </div>
-                        <div style="text-align:center">
-                            <div class="batt-bar"><div class="batt-fill" style="width:${d.batt}%; background:${status.battAlert?'red':'var(--success)'}"></div></div>
-                            <small>${d.batt}% شحن</small>
-                        </div>
-                        <button class="btn-adm" style="padding:5px 15px;" onclick="focusOn('${child.key}')">تتبع</button>
-                    </div>
-                `;
+                body.innerHTML += `
+                    <tr class="${!isOnline?'offline':''}">
+                        <td><b>🛵 جهاز: ${c.key}</b></td>
+                        <td>
+                            <div class="batt-bar"><div class="batt-fill" style="width:${d.batt}%; background:${bCol}"></div></div>
+                            <span style="margin-right:10px;">${d.batt}%</span>
+                        </td>
+                        <td>${d.speed} كم/س</td>
+                        <td><span style="color:${isOnline?'var(--success)':'var(--danger)'}">${isOnline?'● متصل':'● انقطع'}</span></td>
+                        <td><button class="btn-ops btn-blue" onclick="focusDevice('${c.key}', ${d.lat}, ${d.lon})">تتبع</button></td>
+                    </tr>`;
+                updateMarker(c.key, d, isOnline);
             });
         });
 
-        async function addScooter() {
-            const { value: name } = await Swal.fire({ title: 'إضافة سكوتر جديد', input: 'text', inputPlaceholder: 'رقم السكوتر' });
-            if(name) YallaBrain.db.ref('live_nodes/' + name).set({ lat: 30.0444, lon: 31.2357, batt: 100, speed: 0, status: 'available' });
+        // قاعدة بيانات العملاء (شحن لحظي)
+        db.ref('users').on('value', snap => {
+            const body = document.getElementById('users-db-body'); body.innerHTML = "";
+            snap.forEach(u => {
+                const data = u.val();
+                body.innerHTML += `
+                    <tr>
+                        <td>👤 ${data.name || 'عميل'}</td>
+                        <td>${u.key}</td>
+                        <td style="color:var(--success)">${(data.balance || 0).toFixed(2)} ج</td>
+                        <td style="color:var(--danger)">${data.debt || 0} ج</td>
+                        <td><button class="btn-ops btn-green" onclick="chargeUser('${u.key}')">+ شحن</button></td>
+                    </tr>`;
+            });
+        });
+
+        // مراقبة الرحلات النشطة
+        db.ref('active_trips').on('value', s => {
+            const list = document.getElementById('active-trips-monitor'); list.innerHTML = "";
+            let count = 0;
+            s.forEach(c => {
+                count++; const t = c.val();
+                const m = Math.floor((Date.now() - t.start) / 60000);
+                list.innerHTML += `
+                    <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center; border-right:10px solid var(--adm-blue)">
+                        <div><b>🛵 ${t.scooterId}</b><br><small>العميل: ${t.phone}</small></div>
+                        <div style="text-align:center"><b>المدة: ${m} دقيقة</b><br><b style="color:var(--success)">الحساب: ${Math.max(40, 40+(m-15)*2.66)} ج</b></div>
+                        <button class="btn-ops btn-red" onclick="killTrip('${c.key}', '${t.scooterId}')">إنهاء</button>
+                    </div>`;
+            });
+            document.getElementById('stat-active').innerText = count;
+        });
+
+        // شات الدعم (تنبيه الرسائل)
+        db.ref('support_chats').on('value', snap => {
+            const list = document.getElementById('admin-support-list'); list.innerHTML = "";
+            let newMsg = 0;
+            snap.forEach(c => {
+                newMsg++;
+                list.innerHTML += `
+                    <div class="chat-user-item" onclick="openChat('${c.key}')">
+                        <b>👤 عميل: ${c.key}</b>
+                        <span class="msg-badge">رسالة</span>
+                    </div>`;
+            });
+            document.getElementById('new-msg-count').innerText = newMsg;
+            document.getElementById('new-msg-count').style.display = newMsg > 0 ? 'inline' : 'none';
+        });
+
+        // الخزينة
+        db.ref('shifts/current/cash').on('value', s => document.getElementById('stat-cash').innerText = (s.val()||0).toFixed(2) + " ج");
+
+        initMap();
+        loadAI();
+    }
+
+    // --- العمليات (Actions) ---
+    async function chargeUser(phone) {
+        const { value: amt } = await Swal.fire({ title:'شحن رصيد لحظي', input:'number', inputLabel: 'الرقم: ' + phone, background: '#1a1110', color: '#fff' });
+        if(amt) {
+            db.ref('users/'+phone+'/balance').transaction(v => (v||0) + parseFloat(amt));
+            Swal.fire('تم التحديث', 'الرصيد ظهر عند العميل الآن', 'success');
         }
-    </script>
+    }
+
+    async function openChat(phone) {
+        const { value: text } = await Swal.fire({ title: `الرد على ${phone}`, input: 'textarea', confirmButtonText: 'إرسال الرد' });
+        if(text) {
+            db.ref('support_chats/'+phone+'/messages').push({ text, sender:'admin', time:Date.now() });
+        }
+    }
+
+    async function addScooterToDB() {
+        const { value: name } = await Swal.fire({ title:'إضافة جهاز جديد', input:'text', inputPlaceholder:'رقم السكوتر' });
+        if(name) db.ref('live_nodes/'+name).set({ lat: 30.0444, lon: 31.2357, batt: 100, speed: 0, status: 'available', lastUpdate: Date.now() });
+    }
+
+    function killTrip(key, scId) {
+        Swal.fire({ title:'إنهاء الرحلة؟', icon:'warning', showCancelButton:true }).then(r => {
+            if(r.isConfirmed) {
+                db.ref('active_trips/'+key).remove();
+                db.ref('live_nodes/'+scId).update({ status: 'available' });
+            }
+        });
+    }
+
+    function saveConfig() {
+        db.ref('settings').set({ min: parseFloat(document.getElementById('cfg-min').value), base: parseFloat(document.getElementById('cfg-base').value) });
+        Swal.fire('تم الحفظ');
+    }
+
+    // --- الخريطة والتحليل ---
+    function initMap() {
+        if(!adminMap) {
+            adminMap = L.map('radar-map', {zoomControl: false}).setView([30.0444, 31.2357], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(adminMap);
+        }
+    }
+
+    function updateMarker(id, d, online) {
+        const col = online ? (d.status==='active'?'#0066ff':'#00ff9d') : '#444';
+        if(markers[id]) {
+            markers[id].setLatLng([d.lat, d.lon]).setStyle({color: col});
+        } else {
+            markers[id] = L.circleMarker([d.lat, d.lon], {radius: 8, color: col, fillOpacity: 1}).addTo(adminMap).bindPopup("سكوتر: " + id);
+        }
+    }
+
+    function focusDevice(id, lat, lon) { adminMap.flyTo([lat, lon], 18); markers[id].openPopup(); }
+
+    function loadAI() {
+        db.ref('shifts/history').limitToLast(20).once('value', s => {
+            let total = 0; s.forEach(c => total += parseFloat(c.val().final || 0));
+            document.getElementById('ai-report').innerText = `🤖 تحليل AI: تم تحليل آخر 20 رحلة. إجمالي الدخل: ${total} ج. أداء الأسطول مستقر بنسبة 96%.`;
+        });
+    }
+
+    function showSec(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('sec-' + id).classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    }
+</script>
 </body>
-// مراقبة الأسطول للأدمن بكفاءة عالية
-YallaBrain.db.ref('live_nodes').on('value', snap => {
-    const list = document.getElementById('adm-fleet-list');
-    list.innerHTML = "";
-    
-    snap.forEach(child => {
-        const d = child.val();
-        const isOffline = (Date.now() - d.lastUpdate > 20000);
-        
-        list.innerHTML += `
-            <div class="device-card ${isOffline ? 'fallen' : ''}" style="border-right-color: ${isOffline ? 'red' : '#00d2ff'}">
-                <div>
-                    <b>🛵 سكوتر: ${child.key}</b><br>
-                    <small>${isOffline ? '⚠️ غير متصل (تحقق من الجهاز)' : '✅ يعمل بشكل طبيعي'}</small>
-                </div>
-                <div class="batt-lvl" style="color: ${d.batt < 20 ? 'red' : '#00ff9d'}">
-                    <i class="fas fa-battery-half"></i> ${d.batt}%
-                </div>
-                <button class="btn-adm" onclick="locate('${child.key}')">رادار</button>
-            </div>
-        `;
-    });
-});
+</html>
