@@ -2,294 +2,77 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yalla Server | مركز التحكم السيادي</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yalla Scooter | Official App</title>
     
-    <!-- مكاتب التشغيل -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root {
-            --u-blue: #0066ff; --u-bg: #f8f9fc;
-            --server-dark: #0a0b10; --server-panel: #11141d;
-            --accent-blue: #00d2ff; --success: #00ff9d; --danger: #ff3b30;
-        }
-
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: 0.3s; }
-        body { background: var(--server-dark); color: #fff; margin: 0; height: 100vh; overflow: hidden; display: flex; }
-
-        /* --- بوابة الدخول --- */
-        #gate-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .gate-card { width: 90%; max-width: 400px; text-align: center; padding: 50px; border-radius: 40px; border: 2px solid var(--accent-blue); background: var(--server-panel); box-shadow: 0 0 50px rgba(0,210,255,0.2); }
-
-        /* --- واجهة الإدارة (Server Control) --- */
-        #server-ui { display: none; width: 100%; height: 100vh; flex-direction: row; }
-        
-        /* Sidebar */
-        .sidebar { width: 300px; background: #000; border-left: 1px solid #222; display: flex; flex-direction: column; padding: 30px; }
-        .nav-link { padding: 18px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #555; font-weight: bold; margin-bottom: 10px; }
-        .nav-link.active { background: rgba(0,210,255,0.1); color: var(--accent-blue); border-right: 5px solid var(--accent-blue); }
-
-        /* Main Content */
-        .main-content { flex: 1; overflow-y: auto; padding: 40px; background: #07080c; }
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; margin-bottom: 40px; }
-        .kpi-box { background: var(--server-panel); padding: 30px; border-radius: 30px; border: 1px solid #1e222d; text-align: center; }
-        .kpi-box b { display: block; font-size: 35px; color: var(--accent-blue); font-family: 'Orbitron'; margin-top: 10px; }
-
-        /* قاعدة البيانات (Tables) */
-        .db-table { width: 100%; border-collapse: collapse; background: var(--server-panel); border-radius: 20px; overflow: hidden; }
-        .db-table th { background: #1a1e2a; padding: 20px; text-align: right; color: #777; font-size: 14px; }
-        .db-table td { padding: 20px; border-bottom: 1px solid #1a1e2a; font-size: 15px; }
-
-        /* --- واجهة السكوتر (Scooter Broadcasting) --- */
-        #scooter-broadcast { display: none; height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; background: #000; }
-        .speedo { width: 320px; height: 320px; border: 15px solid #111; border-top-color: var(--accent-blue); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 80px rgba(0,210,255,0.1); }
-        .speed-val { font-family: 'Orbitron'; font-size: 120px; color: #fff; }
-
-        /* البطارية والاتصال */
-        .batt-status { width: 80px; height: 10px; background: #222; border-radius: 10px; display: inline-block; position: relative; overflow: hidden; vertical-align: middle; }
-        .batt-fill { height: 100%; transition: 1s; }
-
-        /* الأزرار */
-        .btn-server { padding: 12px 25px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        .btn-blue { background: var(--accent-blue); color: #000; }
-        .btn-success { background: var(--success); color: #000; }
-        .btn-danger { background: rgba(255,59,48,0.1); color: var(--danger); border: 1px solid var(--danger); }
-
-        .section { display: none; } .section.active { display: block; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-        input { width: 100%; padding: 15px; background: #000; border: 1px solid #222; color: #fff; border-radius: 12px; text-align: center; }
-    </style>
 </head>
 <body>
 
-    <!-- 1. بوابة الدخول -->
-    <div id="gate-screen">
-        <div class="gate-card">
-            <h1 style="color:var(--accent-blue); font-family:Orbitron; letter-spacing:4px;">YALLA SERVER</h1>
-            <p style="color:#555; margin-bottom:40px;">نظام التحكم المركزي (خادم)</p>
-            <input type="password" id="gateKey" placeholder="••••">
-            <button onclick="unlockServer()" class="btn-server btn-blue" style="width:100%; margin-top:20px; justify-content:center; font-size:18px;">دخول آمن</button>
-        </div>
+    <!-- 1. شاشة الدخول (الاستقبال) -->
+    <div id="auth-screen" style="position:fixed; inset:0; background:white; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px;">
+        <svg width="100" viewBox="0 0 100 100"><path d="M20 20 L40 50 L40 85 M40 50 L60 20" stroke="#0066ff" stroke-width="12" fill="none" stroke-linecap="round"/></svg>
+        <h1 style="color:#0066ff; font-family:Orbitron; letter-spacing:2px; margin:20px 0 40px 0;">YALLA</h1>
+        <input type="tel" id="uPhone" style="width:100%; padding:18px; border-radius:15px; border:1px solid #eee; text-align:center; font-size:18px; background:#f4f8ff;" placeholder="رقم الهاتف">
+        <button onclick="login()" style="width:100%; padding:18px; border-radius:50px; background:#0066ff; color:white; border:none; font-weight:900; font-size:18px; margin-top:15px;">دخول</button>
     </div>
 
-    <!-- 2. واجهة السكوتر (Broadcasting Mode) -->
-    <div id="scooter-broadcast">
-        <h2 style="color:var(--success); margin-bottom:30px;"><i class="fas fa-satellite-dish"></i> الجهاز متصل بالقاعدة</h2>
-        <div class="speedo">
-            <span class="speed-val" id="sc-speed">0</span>
-            <span style="color:var(--accent-blue); font-weight:bold; letter-spacing:5px;">KM/H</span>
-        </div>
-        <div style="margin-top:60px; display:flex; gap:40px;">
-            <div style="text-align:center;"><i class="fas fa-battery-full" style="color:var(--success); font-size:40px;"></i><p id="sc-batt">--%</p></div>
-            <div style="text-align:center;"><i class="fas fa-shield-alt" style="color:var(--accent-blue); font-size:40px;"></i><p>أمان AI</p></div>
-        </div>
-        <p id="sc-id-display" style="position:absolute; bottom:20px; color:#222; font-family:Orbitron;"></p>
-    </div>
-
-    <!-- 3. نظام الإدارة المركزي (The Sovereign Hub) -->
-    <div id="server-ui">
-        <nav class="sidebar">
-            <div style="font-family:Orbitron; color:var(--accent-blue); font-size:28px; text-align:center; margin-bottom:50px;">Y-OPS</div>
-            <div class="nav-link active" onclick="showSec('dashboard')"><i class="fas fa-chart-pie"></i> نظرة عامة</div>
-            <div class="nav-link" onclick="showSec('fleet')"><i class="fas fa-motorcycle"></i> الأسطول والأجهزة</div>
-            <div class="nav-link" onclick="showSec('users')"><i class="fas fa-database"></i> قاعدة العملاء</div>
-            <div class="nav-link" onclick="showSec('finance')"><i class="fas fa-wallet"></i> المالية والوردية</div>
-            <div class="nav-link" onclick="showSec('settings')"><i class="fas fa-sliders-h"></i> إعدادات المنظومة</div>
-            <div class="nav-link" onclick="location.reload()" style="margin-top:auto; color:var(--danger);"><i class="fas fa-power-off"></i> خروج</div>
-        </nav>
-
-        <main class="main-content">
-            <!-- قسم نظرة عامة -->
-            <div id="sec-dashboard" class="section active">
-                <div class="kpi-row">
-                    <div class="kpi-box">الرحلات النشطة<b id="stat-active">0</b></div>
-                    <div class="kpi-box">رصيد الخزينة<b id="stat-cash" style="color:var(--success)">0 ج</b></div>
-                    <div class="kpi-box">إجمالي العملاء<b id="stat-users">0</b></div>
-                </div>
-                <h3>الرحلات الجارية (مراقبة لحظية)</h3>
-                <div id="active-trips-monitor"></div>
-            </div>
-
-            <!-- قاعدة بيانات الأجهزة -->
-            <div id="sec-fleet" class="section">
-                <h2>رادار الأسطول وشحن البطارية</h2>
-                <table class="db-table">
-                    <thead><tr><th>معرف الجهاز</th><th>الموقع الحالي</th><th>شحن البطارية</th><th>الحالة</th><th>إجراء</th></tr></thead>
-                    <tbody id="fleet-db-body"></tbody>
-                </table>
-            </div>
-
-            <!-- قاعدة بيانات العملاء -->
-            <div id="sec-users" class="section">
-                <h2>قاعدة بيانات العملاء والديون</h2>
-                <input type="text" placeholder="بحث باسم أو رقم العميل..." oninput="searchDB(this.value)" style="text-align:right; margin-bottom:20px;">
-                <table class="db-table">
-                    <thead><tr><th>العميل</th><th>رقم الهاتف</th><th>الرصيد</th><th>الديون</th><th>التوثيق</th><th>إجراء</th></tr></thead>
-                    <tbody id="users-db-body"></tbody>
-                </table>
-            </div>
-
-            <!-- الإعدادات -->
-            <div id="sec-settings" class="section">
-                <h2>إعدادات نظام التطبيق</h2>
-                <div class="kpi-box" style="text-align:right;">
-                    <p>سعر الدقيقة للعملاء (بعد 15 د):</p><input type="number" id="cfg-min" onchange="saveConfig()">
-                    <p style="margin-top:20px;">فتحة العداد للعملاء (أول 15 د):</p><input type="number" id="cfg-base" onchange="saveConfig()">
-                    <button class="btn-server btn-blue" style="width:100%; margin-top:30px; justify-content:center;" onclick="saveConfig()">حفظ وتطبيق على الجميع</button>
-                </div>
-                <button class="btn-server btn-blue" style="margin-top:20px;" onclick="addScooterToDB()">+ إضافة سكوتر جديد للمخزن</button>
-            </div>
-        </main>
-    </div>
-
-<script>
-    // --- الربط التقني بـ Firebase ---
-    const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let myScooterId = localStorage.getItem('yalla_sc_id') || "Y-" + Math.floor(1000+Math.random()*9000);
-    localStorage.setItem('yalla_sc_id', myScooterId);
-
-    // --- 1. نظام فك قفل الخادم ---
-    function unlockServer() {
-        const key = document.getElementById('gateKey').value;
-        if(key === "1234") { // وضع السكوتر
-            document.getElementById('gate-screen').style.display='none';
-            document.getElementById('scooter-broadcast').style.display='flex';
-            startBroadcasting();
-        } else if(key === "9924") { // وضع الإدارة (الخادم)
-            document.getElementById('gate-screen').style.display='none';
-            document.getElementById('server-ui').style.display='flex';
-            runServerCore();
-        } else { Swal.fire('خطأ', 'الكود غير صحيح', 'error'); }
-    }
-
-    // --- 2. محرك السكوتر (Broadcasting) ---
-    function startBroadcasting() {
-        document.getElementById('sc-id-display').innerText = "DEVICE ID: " + myScooterId;
-        if(navigator.geolocation) {
-            navigator.geolocation.watchPosition(pos => {
-                const lat = pos.coords.latitude, lon = pos.coords.longitude;
-                const speed = Math.round(pos.coords.speed * 3.6) || 0;
-                document.getElementById('sc-speed').innerText = speed;
-                
-                navigator.getBattery?.().then(bt => {
-                    const batt = Math.round(bt.level * 100);
-                    document.getElementById('sc-batt').innerText = batt + "%";
-                    db.ref('live_nodes/' + myScooterId).update({
-                        lat, lon, speed, batt, status: 'available', lastUpdate: Date.now()
-                    });
-                });
-            }, null, {enableHighAccuracy:true});
-        }
-    }
-
-    // --- 3. محرك الخادم (Server Control Logic) ---
-    function runServerCore() {
-        // مراقبة رادار الأجهزة
-        db.ref('live_nodes').on('value', snap => {
-            const body = document.getElementById('fleet-db-body'); body.innerHTML = "";
-            snap.forEach(c => {
-                const d = c.val();
-                const isOnline = (Date.now() - d.lastUpdate < 15000);
-                const battColor = d.batt > 50 ? 'var(--success)' : (d.batt > 20 ? 'var(--warn)' : 'var(--danger)');
-                body.innerHTML += `
-                    <tr>
-                        <td><b>🛵 ${c.key}</b></td>
-                        <td>${d.lat.toFixed(4)}, ${d.lon.toFixed(4)}</td>
-                        <td>
-                            <div class="batt-status"><div class="batt-fill" style="width:${d.batt}%; background:${battColor}"></div></div>
-                            <span style="margin-right:10px;">${d.batt}%</span>
-                        </td>
-                        <td><span style="color:${isOnline?'var(--success)':'#444'}">${isOnline?'متصل':'أوفلاين'}</span></td>
-                        <td><button class="btn-server btn-blue" onclick="forceLocate('${c.key}')">تتبع</button></td>
-                    </tr>`;
-            });
-        });
-
-        // قاعدة بيانات العملاء (شحن لحظي وتوثيق)
-        db.ref('users').on('value', snap => {
-            const body = document.getElementById('users-db-body'); body.innerHTML = "";
-            let userCount = 0;
-            snap.forEach(u => {
-                userCount++;
-                const data = u.val();
-                body.innerHTML += `
-                    <tr>
-                        <td><b>👤 ${data.name || 'عميل'}</b></td>
-                        <td>${u.key}</td>
-                        <td style="color:var(--success); font-weight:bold;">${(data.balance || 0).toFixed(2)} ج</td>
-                        <td style="color:var(--danger)">${data.debt || 0} ج</td>
-                        <td>${data.isVerified ? '✅ موثق' : '❌ بانتظار التوثيق'}</td>
-                        <td><button class="btn-server btn-success" onclick="serverCharge('${u.key}')">شحن رصيد</button></td>
-                    </tr>`;
-            });
-            document.getElementById('stat-users').innerText = userCount;
-        });
-
-        // مراقبة الرحلات والمالية
-        db.ref('active_trips').on('value', s => {
-            document.getElementById('stat-active').innerText = s.numChildren();
-            const list = document.getElementById('active-trips-monitor'); list.innerHTML = "";
-            s.forEach(c => {
-                const t = c.val();
-                list.innerHTML += `<div class="kpi-box" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-right:10px solid var(--accent-blue)"><b>🛵 ${t.scooterId}</b> <span>العميل: ${t.phone}</span> <button class="btn-server btn-danger" onclick="serverKillTrip('${c.key}')">إنهاء إجباري</button></div>`;
-            });
-        });
-
-        db.ref('shifts/current/cash').on('value', s => document.getElementById('stat-cash').innerText = (s.val()||0) + " ج");
+    <!-- 2. واجهة التطبيق الرئيسية -->
+    <div id="app-main" style="display:none;">
+        <div id="map"></div>
         
-        // تحميل الإعدادات الحالية
-        db.ref('settings').on('value', s => {
-            if(s.exists()){
-                document.getElementById('cfg-min').value = s.val().min;
-                document.getElementById('cfg-base').value = s.val().base;
-            }
-        });
-    }
+        <div class="hud">
+            <div class="info-tag"><i class="fas fa-walking" style="color:#0066ff"></i> <span id="walk-time">--</span> دقيقة مشي</div>
+            <button class="fab btn-chat-ai" onclick="openPage('chat')"><i class="fas fa-comment-dots"></i></button>
+            <button class="fab btn-menu" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+            <button class="fab btn-locate" onclick="locateMe()"><i class="fas fa-crosshairs"></i></button>
+            <button class="btn-scan-main" onclick="openScanner()"><i class="fas fa-qrcode"></i> SCAN TO RIDE</button>
+        </div>
 
-    // --- العمليات السيادية (Control Actions) ---
-    async function serverCharge(phone) {
-        const { value: amt } = await Swal.fire({ title:'شحن رصيد للعميل', input:'number', inputLabel: 'الرقم: ' + phone, background: '#11141d', color: '#fff' });
-        if(amt) {
-            db.ref('users/'+phone+'/balance').transaction(v => (v||0) + parseFloat(amt));
-            Swal.fire('تم التحديث', 'الرصيد ظهر عند العميل لحظياً', 'success');
+        <div class="menu-overlay" id="overlay" onclick="toggleMenu()"></div>
+        <nav id="side-menu">
+            <div class="menu-link" onclick="openPage('wallet')"><i class="fas fa-wallet"></i> المحفظة <span class="live-bal" style="margin-right:auto">0.00</span></div>
+            <div class="menu-link" onclick="openPage('history')"><i class="fas fa-history"></i> سجل الرحلات</div>
+            <div class="menu-link" onclick="openPage('chat')"><i class="fas fa-headset"></i> الدعم والموظف المباشر</div>
+            <div class="menu-link" onclick="logout()" style="margin-top:auto; color:red; border:none;"><i class="fas fa-sign-out-alt"></i> خروج</div>
+        </nav>
+    </div>
+
+    <!-- صفحات المحفظة والشات -->
+    <div id="pg-chat" class="full-page">
+        <div class="pg-header"><i class="fas fa-chevron-left" onclick="closePage('chat')"></i> الدعم المباشر <i></i></div>
+        <div id="chat-window" style="flex:1; overflow-y:auto; padding:20px; background:#f9f9fb; display:flex; flex-direction:column;"></div>
+        <div style="padding:15px; display:flex; gap:10px; border-top:1px solid #eee;">
+            <input type="text" id="chatInp" placeholder="اكتب سؤالك..." style="flex:1; border:none; background:#f0f5ff; padding:15px; border-radius:15px;">
+            <button onclick="sendMsg()" style="width:50px; height:50px; background:#0066ff; color:white; border-radius:50%; border:none;"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app-brain.js"></script>
+    <script>
+        // كود الربط النهائي للواجهة
+        function login() {
+            const ph = document.getElementById('uPhone').value;
+            if(ph.length < 11) return;
+            localStorage.setItem('y_titan_verified', ph);
+            location.reload();
         }
-    }
-
-    async function addScooterToDB() {
-        const { value: name } = await Swal.fire({ title:'إضافة سكوتر للخادم', input:'text', inputPlaceholder: 'رقم الجهاز' });
-        if(name) db.ref('live_nodes/'+name).set({ lat: 30.0444, lon: 31.2357, batt: 100, speed: 0, status: 'available', lastUpdate: Date.now() });
-    }
-
-    function saveConfig() {
-        db.ref('settings').set({
-            min: parseFloat(document.getElementById('cfg-min').value),
-            base: parseFloat(document.getElementById('cfg-base').value)
-        });
-        Swal.fire('تم الحفظ', 'تم تحديث تعريفة التطبيق للجميع', 'success');
-    }
-
-    function showSec(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById('sec-' + id).classList.add('active');
-        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-    }
-
-    function serverKillTrip(key) {
-        Swal.fire({ title: 'إنهاء الرحلة؟', text: 'سيتم تحويل السكوتر للحالة متاح فوراً', icon: 'warning', showCancelButton: true }).then(r => {
-            if(r.isConfirmed) db.ref('active_trips/'+key).remove();
-        });
-    }
-</script>
+        if(localStorage.getItem('y_titan_verified')) {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-main').style.display = 'block';
+            const map = L.map('map', {zoomControl:false}).setView([30.0444, 31.2357], 16);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            YallaBrain.startGPS(map);
+        }
+        function toggleMenu() { document.getElementById('side-menu').classList.toggle('open'); document.getElementById('overlay').style.display = document.getElementById('side-menu').classList.contains('open') ? 'block' : 'none'; }
+        function openPage(id) { document.getElementById('pg-'+id).style.display='flex'; }
+        function closePage(id) { document.getElementById('pg-'+id).style.display='none'; }
+    </script>
 </body>
 </html>
