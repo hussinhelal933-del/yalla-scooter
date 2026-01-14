@@ -1,82 +1,24 @@
-/* 
-   YALLA SCOOTER PREMIUM DESIGN SYSTEM V200.0 
-   Theme: Royal White & Blue (Rabbit Style)
-*/
-
-:root {
-    --u-blue: #0066ff;
-    --u-bg: #ffffff;
-    --u-light: #f4f8ff;
-    --text-dark: #1a1a1a;
-    --text-gray: #8e8e93;
-    --border-light: #f2f2f7;
-    --success: #34c759;
-    --danger: #ff3b30;
-    --warn: #ff9500;
-    --shadow: 0 10px 40px rgba(0,0,0,0.06);
+/* --- لوحة حالة السكوتر للعميل (Status Dashboard) --- */
+.scooter-status-panel {
+    position: absolute; bottom: 120px; left: 20px; right: 20px;
+    background: var(--u-bg); border-radius: 25px; padding: 15px 25px;
+    display: none; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+    z-index: 1001; animation: slideInUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* التنسيق الأساسي للموبايل */
-* { box-sizing: border-box; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
-body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: white; }
+.status-indicator { display: flex; align-items: center; gap: 10px; }
+.dot-online { width: 10px; height: 10px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); }
+.dot-offline { width: 10px; height: 10px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 10px var(--danger); }
 
-/* الخريطة السيادية */
-#map { position: absolute; inset: 0; z-index: 1; filter: grayscale(0.15) contrast(1.1); }
+.sc-info-group { text-align: center; }
+.sc-info-group span { display: block; font-size: 10px; color: var(--gray); font-weight: bold; }
+.sc-info-group b { font-family: 'Orbitron'; font-size: 18px; color: var(--u-blue); }
 
-/* واجهة العميل العائمة (HUD) */
-.hud { position: absolute; inset: 0; pointer-events: none; z-index: 1000; }
-.hud button { pointer-events: auto; box-shadow: var(--shadow); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.hud button:active { transform: scale(0.9); }
-
-/* الأزرار الدائرية (Menu, Locate, Chat) */
-.fab { width: 60px; height: 60px; background: white; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--u-blue); position: absolute; }
-.btn-menu { bottom: 40px; right: 25px; }
-.btn-locate { bottom: 40px; left: 25px; }
-.btn-chat-ai { top: 60px; right: 25px; width: 48px; height: 48px; font-size: 18px; }
-
-/* زر الـ Scan العملاق (Rabbit Style) */
-.btn-scan-main {
-    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-    background: var(--u-blue); color: white; padding: 18px 45px; border-radius: 50px;
-    font-weight: 900; font-size: 19px; width: 240px; border: none;
-    box-shadow: 0 10px 30px rgba(0,102,255,0.3); pointer-events: auto;
-    display: flex; align-items: center; gap: 12px; justify-content: center;
+/* أنيميشن الاهتزاز عند الفصل */
+@keyframes shake-warn {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
-
-/* تاق المعلومات العلوي (Minutes Walk) */
-.info-tag {
-    position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-    background: white; padding: 10px 25px; border-radius: 50px; 
-    box-shadow: var(--shadow); font-weight: 900; font-size: 13px; 
-    display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--u-light);
-    pointer-events: auto;
-}
-
-/* القائمة الجانبية الفخمة */
-#side-menu { 
-    position: fixed; top: 0; right: -100%; width: 85%; height: 100%; 
-    background: white; z-index: 5000; padding: 70px 35px; 
-    display: flex; flex-direction: column; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: -10px 0 40px rgba(0,0,0,0.1); 
-}
-#side-menu.open { right: 0; }
-.menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 4999; display: none; backdrop-filter: blur(5px); }
-
-.menu-link { 
-    display: flex; align-items: center; gap: 20px; padding: 20px 0; 
-    border-bottom: 1px solid var(--border-light); font-weight: 600; 
-    cursor: pointer; color: var(--text-dark); transition: 0.2s;
-}
-.menu-link i { color: var(--u-blue); font-size: 22px; width: 30px; text-align: center; }
-
-/* الصفحات الكاملة (Pages) */
-.full-page { position: fixed; inset: 0; background: white; z-index: 6000; display: none; flex-direction: column; animation: slideUp 0.4s ease; overflow-y: auto; }
-@keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
-.pg-header { padding: 25px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--u-light); font-weight: 900; color: var(--u-blue); font-size: 22px; }
-
-/* المحفظة نيون */
-.wallet-banner { background: var(--u-blue); padding: 40px; border-radius: 35px; margin: 25px; color: white; text-align: center; box-shadow: 0 15px 30px rgba(0,102,255,0.2); }
-
-/* تصميم الماركرات والبطارية */
-.bike-marker { width: 48px; height: 48px; background: white; border-radius: 50%; border: 2.5px solid var(--u-blue); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); position: relative; }
-.batt-tag { position: absolute; top: -28px; background: white; border: 1px solid #eee; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; }
+.disconnected { border-color: var(--danger) !important; animation: shake-warn 0.3s linear infinite !important; }
