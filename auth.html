@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yalla Scooter | دخول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="auth-style.css">
+    <!-- مكتبات فايربيز للتحقق -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div class="auth-container">
+        <!-- اللوجو بتاعك اللي بعتهولي -->
+        <div class="logo-area">
+            <img src="logo.png" alt="Yalla Scooter" class="main-logo">
+        </div>
+
+        <div class="auth-box">
+            <h2 id="authTitle">تسجيل الدخول</h2>
+            
+            <!-- خانة البريد الإلكتروني -->
+            <div class="input-group">
+                <input type="email" id="userEmail" placeholder="البريد الإلكتروني" required>
+            </div>
+
+            <!-- خانة رقم الهاتف -->
+            <div class="input-group" id="phoneGroup" style="display: none;">
+                <input type="tel" id="userPhone" placeholder="رقم الهاتف">
+            </div>
+
+            <!-- خانة كلمة السر -->
+            <div class="input-group">
+                <input type="password" id="userPass" placeholder="كلمة السر" required>
+            </div>
+
+            <button id="mainBtn" onclick="handleAuth()" class="auth-btn">دخول</button>
+
+            <div class="toggle-auth">
+                <span id="toggleText">ليس لديك حساب؟</span>
+                <a href="javascript:void(0)" onclick="toggleView()" id="toggleBtn">سجل الآن</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth-logic.js"></script>
+</body>
+</html>
