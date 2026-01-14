@@ -3,37 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yalla Scooter | الخريطة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <title>Yalla Scooter | App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="app-ui.css"> <!-- ملف التصميم -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div id="map-bg"></div> <!-- هنا توضع الخريطة مستقبلاً -->
-
-    <div class="app-overlay">
-        <header class="top-bar">
-            <button class="icon-btn"><i class="fas fa-bars"></i></button>
-            <div class="wallet-badge" onclick="location.href='wallet.html'">
-                <span id="headerBalance">0.00</span> ج
-            </div>
-        </header>
-
-        <div class="bottom-card">
-            <div class="scooter-info-mini">
-                <i class="fas fa-bolt" style="color:#00ff88"></i>
-                <span>اختر سكوتر قريب منك وابدأ الرحلة</span>
-            </div>
-            <button class="main-action-btn" onclick="requestUnlock()">
-                <i class="fas fa-qrcode"></i>
-                مسح الـ QR للبدء
-            </button>
-        </div>
+    <div class="user-header">
+        <div class="wallet-info">رصيدك: <b id="userBalance">0.00</b> ج</div>
     </div>
-
+    <div class="map-placeholder" style="height:60vh; background:#111; display:flex; align-items:center; justify-content:center; color:#333;">
+        <i class="fas fa-map-marked-alt fa-5x"></i>
+    </div>
+    <div class="action-bar" style="padding:20px; text-align:center;">
+        <button onclick="startUnlock()" style="width:100%; padding:20px; border-radius:15px; background:#00d2ff; border:none; font-size:20px; font-weight:bold; font-family:'Cairo';">
+            <i class="fas fa-qrcode"></i> مسح الـ QR لبدء الرحلة
+        </button>
+    </div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="app-core.js"></script> <!-- مخ النظام -->
+    <script src="app-core.js"></script>
 </body>
 </html>
