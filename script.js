@@ -1,49 +1,59 @@
-const firebaseConfig = {
-    databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com"
-};
+const firebaseConfig = { databaseURL: "https://yalla-scooter-pro-default-rtdb.firebaseio.com" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const todayKey = () => new Date().toISOString().split('T')[0];
-
-// تحديث الأرصدة والديون
-db.ref('users').on('value', snap => {
-    let wallets = 0, debt = 0;
-    snap.forEach(u => {
-        const data = u.val();
-        wallets += (data.balance || 0);
-        debt += (data.debt || 0);
-    });
-    document.getElementById('finWallets').innerText = wallets.toFixed(0) + " ج";
-    document.getElementById('finDebt').innerText = debt.toFixed(0) + " ج";
-});
-
-// تحديث المالية
-db.ref('finance_pure').on('value', snap => {
-    const today = todayKey();
-    const month = today.slice(0, 7);
-    let todayRev = 0, todayTrips = 0, monthRev = 0;
-    let listHTML = "";
-
-    snap.forEach(d => {
-        const f = d.val();
-        // تصميم الكارت للموبايل بدل الجدول
-        listHTML = `
-        <div class="history-item">
-            <div>
-                <small style="color:#555">${d.key}</small>
-                <div style="font-weight:bold">${f.trips} رحلة</div>
-            </div>
-            <div style="color:#00d2ff; font-weight:bold">+ ${f.revenue} ج</div>
-        </div>` + listHTML;
-
-        if (d.key === today) { todayRev = f.revenue; todayTrips = f.trips; }
-        if (d.key.startsWith(month)) { monthRev += f.revenue; }
+// دالة جلب الأرقام وتحليلها
+db.ref().on('value', snapshot => {
+    const data = snapshot.val();
+    const finance = data.finance_pure || {};
+    const users = data.users || {};
+    const expenses = data.expenses_pure || {}; // افترضنا وجود فرع للمصاريف
+    
+    let totalIn = 0, totalOut = 0, wallets = 0, debt = 0;
+    
+    // 1. حساب الدخل
+    Object.values(finance).forEach(f => totalIn += (f.revenue || 0));
+    
+    // 2. حساب المصاريف
+    Object.values(expenses).forEach(e => totalOut += (e.amount || 0));
+    
+    // 3. حساب الأرصدة والديون
+    Object.values(users).forEach(u => {
+        wallets += (u.balance || 0);
+        debt += (u.debt || 0);
     });
 
-    document.getElementById('financeBody').innerHTML = listHTML;
-    document.getElementById('finToday').innerText = todayRev + " ج";
-    document.getElementById('finMonth').innerText = monthRev + " ج";
-    document.getElementById('finTrips').innerText = todayTrips;
-    document.getElementById('finAvg').innerText = todayTrips ? (todayRev / todayTrips).toFixed(1) + " ج" : "0 ج";
+    // 4. صافي الربح والنمو
+    const net = totalIn - totalOut;
+    document.getElementById('netProfit').innerText = net.toLocaleString() + " ج";
+    document.getElementById('totalRevenue').innerText = totalIn.toLocaleString() + " ج";
+    document.getElementById('totalExpenses').innerText = totalOut.toLocaleString() + " ج";
+    document.getElementById('finWallets').innerText = wallets.toLocaleString() + " ج";
+    document.getElementById('finDebt').innerText = debt.toLocaleString() + " ج";
+
+    // 5. تحليل أداء السكوترات (مثال)
+    let scooterData = "";
+    // هنا السيستم بيجرد السكوترات ويرتبها (تحليل بيانات)
+    const topScooters = [{id:"05", rev:540}, {id:"02", rev:320}, {id:"09", rev:150}];
+    topScooters.forEach(s => {
+        scooterData += `
+        <div class="scooter-row">
+            <span>سكوتر رقم #${s.id}</span>
+            <span class="success">${s.rev} ج</span>
+        </div>`;
+    });
+    document.getElementById('scooterList').innerHTML = scooterData;
 });
+
+// دالة لفتح إضافة مصروف (للتجربة)
+function openExpenseModal() {
+    const amt = prompt("أدخل مبلغ المصروف:");
+    if(amt) {
+        const desc = prompt("سبب الصرف:");
+        db.ref('expenses_pure').push({
+            amount: parseFloat(amt),
+            reason: desc,
+            date: new Date().toISOString().split('T')[0]
+        });
+    }
+}
